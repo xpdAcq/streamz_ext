@@ -53,3 +53,15 @@ def test_execution_order():
     for ll, ll2 in zip(L, L2):
         assert ll2 == L2[0]
         assert ll != ll2
+
+
+def test_starmap():
+    def add(x=0, y=0):
+        return x + y
+
+    source = Stream()
+    L = source.starmap(add).sink_to_list()
+
+    source.emit((1, 10))
+
+    assert L[0] == 11
