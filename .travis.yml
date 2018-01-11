@@ -36,4 +36,3 @@ script:
   - coverage run run_tests.py
   - coverage report -m
   - codecov
-  - flake8 streamz_ext
