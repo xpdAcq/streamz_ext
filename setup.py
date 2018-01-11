@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='streamz_ext',
-      version='0.0.0',
+      version='0.0.1',
       description='Streams',
       url='http://github.com/xpdAcq/streamz_ext/',
       maintainer='Christopher J. Wright',
