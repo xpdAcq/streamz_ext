@@ -1,3 +1,4 @@
+from streamz.tests.test_core import *
 from streamz_ext import Stream
 
 
@@ -36,7 +37,7 @@ def test_execution_order():
         z = [(1, 'red'), (2, 'blue'), (3, 'green')]
         for zz in z:
             s.emit(zz)
-        L.append((l, ))
+        L.append((l,))
     for ll in L:
         assert ll == L[0]
 
@@ -65,3 +66,15 @@ def test_starmap():
     source.emit((1, 10))
 
     assert L[0] == 11
+
+
+def test_filter_args_kwargs():
+    def f(x, y, z=False):
+        print(y)
+        print(z)
+        return y and z
+
+    source = Stream()
+    L = source.filter(f, True, z=True).sink_to_list()
+    source.emit(1)
+    assert L[0] is 1
