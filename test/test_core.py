@@ -1,4 +1,4 @@
-from streamz.tests.test_core import *
+# from streamz.tests.test_core import *
 from streamz_ext import Stream
 
 
