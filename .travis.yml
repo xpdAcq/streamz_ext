@@ -5,7 +5,6 @@ cache:
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/matplotlib
-    - $HOME/mc
 
 python:
   - 2.7
