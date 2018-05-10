@@ -1,1 +1,1 @@
-# from streamz.tests.test_graph import *
+from streamz.tests.test_graph import *

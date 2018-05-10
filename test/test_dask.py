@@ -1,1 +1,1 @@
-# from streamz.tests.test_dask import *
+from streamz.tests.test_dask import *

@@ -1,1 +1,1 @@
-# from streamz.tests.test_batch import *
+from streamz.tests.test_batch import *
