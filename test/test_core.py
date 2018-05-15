@@ -1,4 +1,7 @@
-from streamz.tests.test_core import *
+try:
+    from streamz.tests.test_core import *
+except ImportError:
+    pass
 from streamz_ext import Stream
 
 
