@@ -1,7 +1,6 @@
 try:
     from streamz.tests.test_core import *
 except ImportError as e:
-    print(e)
     pass
 from streamz_ext import Stream
 
