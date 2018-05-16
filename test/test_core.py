@@ -1,8 +1,8 @@
+from streamz_ext import Stream
 try:
     from streamz.tests.test_core import *
 except ImportError as e:
     pass
-from streamz_ext import Stream
 
 
 def test_star_sink():
