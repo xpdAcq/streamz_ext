@@ -3,7 +3,6 @@ section_order:
   - install
   - run
   - test
-  - doc
 install: python setup.py install
 build:
   pip:
@@ -13,18 +12,18 @@ build:
     default:
       conda: python
 run:
-  yaml:
+  streamz:
     default:
       conda: streamz
     bleeding:
       pip: 'git+https://github.com/mrocklin/streamz.git#egg=streamz'
-  xonsh:
+  toolz:
     default:
       conda: toolz
-  xonda:
+  tornado:
     default:
       pip: tornado
-  pip:
+  distributed:
     default:
       conda: distributed
 test:
