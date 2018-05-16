@@ -39,3 +39,6 @@ test:
   coverage:
     default:
       conda: coverage
+  pytest-env:
+    default:
+      conda: pytest-env
