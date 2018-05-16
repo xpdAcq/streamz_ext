@@ -1,0 +1,42 @@
+section_order:
+  - build
+  - install
+  - run
+  - test
+  - doc
+install: python setup.py install
+build:
+  pip:
+    default:
+      conda: setuptools
+  python:
+    default:
+      conda: python
+run:
+  yaml:
+    default:
+      conda: streamz
+    bleeding:
+      pip: 'git+https://github.com/mrocklin/streamz.git#egg=streamz'
+  xonsh:
+    default:
+      conda: toolz
+  xonda:
+    default:
+      pip: tornado
+  pip:
+    default:
+      conda: distributed
+test:
+  pytest:
+    default:
+      conda: pytest
+  flake8:
+    default:
+      conda: flake8
+  codecov:
+    default:
+      conda: codecov
+  coverage:
+    default:
+      conda: coverage
