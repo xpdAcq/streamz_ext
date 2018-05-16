@@ -6,6 +6,10 @@ cache:
     - $HOME/.cache/pip
     - $HOME/.cache/matplotlib
 
+env:
+  - PRECEDENCE='default'
+  - PRECEDENCE='default bleeding'
+
 python:
   - 3.5
   - 3.6
