@@ -1,0 +1,15 @@
+**Added:** None
+
+**Changed:**
+
+* ``unique`` now handles all non hashables in a ``deque`` rather than just
+  ``dict``s
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+
+**Security:** None
