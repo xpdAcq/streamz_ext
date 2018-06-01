@@ -1,4 +1,4 @@
-from collections import MutableMapping
+from collections import Hashable
 
 from streamz.core import *
 from streamz.core import _global_sinks, _truthy
@@ -109,16 +109,16 @@ class unique(Stream):
         if history:
             from zict import LRU
             self.seen = LRU(history, self.seen)
-            self.dict_seen = deque(maxlen=history)
+            self.non_hash_seen = deque(maxlen=history)
 
         Stream.__init__(self, upstream, **kwargs)
 
     def update(self, x, who=None):
         y = self.key(x)
         # If y is a dict then we can't use LRU cache use FILO deque instead
-        if isinstance(y, MutableMapping):
-            if y not in self.dict_seen:
-                self.dict_seen.append(y)
+        if not isinstance(y, Hashable):
+            if y not in self.non_hash_seen:
+                self.non_hash_seen.append(y)
                 return self._emit(x)
         else:
             if y not in self.seen:
