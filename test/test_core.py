@@ -25,9 +25,20 @@ def test_unique_dict():
 
     source.emit({'a': 1})
     source.emit({'a': 1})
-    source.emit({'a': 1})
+    source.emit({'b': 1})
 
-    assert L == [{'a': 1}]
+    assert L == [{'a': 1}, {'b': 1}]
+
+
+def test_unique_list():
+    source = Stream()
+    L = source.unique(history=1).sink_to_list()
+
+    source.emit(['a'])
+    source.emit(['a'])
+    source.emit(['b'])
+
+    assert L == [['a'], ['b']]
 
 
 def test_execution_order():
