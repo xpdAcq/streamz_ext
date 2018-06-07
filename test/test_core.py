@@ -1,3 +1,5 @@
+from operator import add
+
 from streamz_ext import Stream
 try:
     from streamz.tests.test_core import *
@@ -94,16 +96,15 @@ def test_filter_args_kwargs():
     assert L[0] is 1
 
 
-def test_flatfield():
+def test_first():
     a = Stream()
     b = Stream()
     c = a.zip(b)
 
-    z = c.starmap(operator.add)
+    z = c.starmap(add)
     zz = z.combine_latest(b, emit_on=0, first=b)
     L = zz.sink_to_list()
 
     a.emit(1)
     b.emit(1)
     assert len(L) == 1
-    a.visualize(source_node=True)
