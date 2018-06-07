@@ -124,3 +124,70 @@ class unique(Stream):
             if y not in self.seen:
                 self.seen[y] = 1
                 return self._emit(x)
+
+
+@Stream.register_api()
+class combine_latest(Stream):
+    """ Combine multiple streams together to a stream of tuples
+
+    This will emit a new tuple of all of the most recent elements seen from
+    any stream.
+
+    Parameters
+    ----------
+    emit_on : stream or list of streams or None
+        only emit upon update of the streams listed.
+        If None, emit on update from any stream
+    first : stream or iterable of streams or None
+        reorder the listed upstream nodes' emit order to emit to this node
+        first. If None, do not reorder emits, defaults to None.
+
+    See Also
+    --------
+    zip
+    """
+    _graphviz_orientation = 270
+    _graphviz_shape = 'triangle'
+
+    def __init__(self, *upstreams, **kwargs):
+        emit_on = kwargs.pop('emit_on', None)
+        first = kwargs.pop('first', None)
+
+        self.last = [None for _ in upstreams]
+        self.missing = set(upstreams)
+        if emit_on is not None:
+            if not isinstance(emit_on, Iterable):
+                emit_on = (emit_on, )
+            emit_on = tuple(
+                upstreams[x] if isinstance(x, int) else x for x in emit_on)
+            self.emit_on = emit_on
+        else:
+            self.emit_on = upstreams
+        Stream.__init__(self, upstreams=upstreams, **kwargs)
+        if first:
+            if not isinstance(first, tuple):
+                first = (first, )
+            for upstream in first:
+                for n in upstream.downstreams.data:
+                    if n() is self:
+                        break
+                upstream.downstreams.data._od.move_to_end(n, last=False)
+                del n
+
+    def _add_upstream(self, upstream):
+        self.last.append(None)
+        self.missing.update([upstream])
+        if self.emit_on != self.upstreams:
+            super()._add_upstream(upstream)
+        else:
+            super()._add_upstream(upstream)
+            self.emit_on = self.upstreams
+
+    def update(self, x, who=None):
+        if self.missing and who in self.missing:
+            self.missing.remove(who)
+
+        self.last[self.upstreams.index(who)] = x
+        if not self.missing and who in self.emit_on:
+            tup = tuple(self.last)
+            return self._emit(tup)
