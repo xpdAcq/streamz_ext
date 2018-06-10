@@ -1,3 +1,5 @@
+from operator import add
+
 from streamz_ext import Stream
 try:
     from streamz.tests.test_core import *
@@ -92,3 +94,17 @@ def test_filter_args_kwargs():
     L = source.filter(f, True, z=True).sink_to_list()
     source.emit(1)
     assert L[0] is 1
+
+
+def test_first():
+    a = Stream()
+    b = Stream()
+    c = a.zip(b)
+
+    z = c.starmap(add)
+    zz = z.combine_latest(b, emit_on=0, first=b)
+    L = zz.sink_to_list()
+
+    a.emit(1)
+    b.emit(1)
+    assert len(L) == 1

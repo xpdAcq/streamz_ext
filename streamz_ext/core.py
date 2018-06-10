@@ -1,6 +1,7 @@
 from collections import Hashable
 
 from streamz.core import *
+from streamz.core import combine_latest as _combine_latest
 from streamz.core import _global_sinks, _truthy
 
 
@@ -124,3 +125,41 @@ class unique(Stream):
             if y not in self.seen:
                 self.seen[y] = 1
                 return self._emit(x)
+
+
+@Stream.register_api()
+class combine_latest(_combine_latest):
+    """ Combine multiple streams together to a stream of tuples
+
+    This will emit a new tuple of all of the most recent elements seen from
+    any stream.
+
+    Parameters
+    ----------
+    emit_on : stream or list of streams or None
+        only emit upon update of the streams listed.
+        If None, emit on update from any stream
+    first : stream or iterable of streams or None
+        reorder the listed upstream nodes' emit order to emit to this node
+        first. If None, do not reorder emits, defaults to None.
+
+    See Also
+    --------
+    zip
+    """
+    _graphviz_orientation = 270
+    _graphviz_shape = 'triangle'
+
+    def __init__(self, *upstreams, **kwargs):
+        first = kwargs.pop('first', None)
+
+        _combine_latest.__init__(self, *upstreams, **kwargs)
+        if first:
+            if not isinstance(first, tuple):
+                first = (first, )
+            for upstream in first:
+                for n in upstream.downstreams.data:
+                    if n() is self:
+                        break
+                upstream.downstreams.data._od.move_to_end(n, last=False)
+                del n
