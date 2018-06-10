@@ -4,6 +4,21 @@ streamz_ext Change Log
 
 .. current developments
 
+v0.2.0
+====================
+
+**Added:**
+
+* ``first`` kwarg to ``combine_latest`` allowing users to re-order the pipeline
+  as needed when using ``combine_latest``. This helps with jug handle like
+  graphs where a source node is both part of both the incoming streams, by
+  allowing the ``emit_on`` stream(s) to be computed later, permitting the
+  buffers to be filled when ``emit_on`` emits.
+* Test for ``unique`` using lists
+
+
+
+
 v0.1.0
 ====================
 
