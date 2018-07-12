@@ -26,6 +26,9 @@ run:
   distributed:
     default:
       conda: distributed
+  networkx:
+    default:
+      conda: networkx
 test:
   pytest:
     default:
