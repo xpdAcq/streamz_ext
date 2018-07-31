@@ -2,9 +2,11 @@ from collections import Hashable
 from collections.abc import Sequence
 
 from streamz.core import *
-from streamz.core import (combine_latest as _combine_latest,
-                          zip as _zip,
-                          zip_latest as _zip_latest)
+from streamz.core import (
+    combine_latest as _combine_latest,
+    zip as _zip,
+    zip_latest as _zip_latest,
+)
 from streamz.core import _global_sinks, _truthy
 
 
@@ -30,7 +32,8 @@ class starsink(Stream):
     map
     Stream.sink_to_list
     """
-    _graphviz_shape = 'trapezium'
+
+    _graphviz_shape = "trapezium"
 
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = func
@@ -71,11 +74,12 @@ class filter(Stream):
     2
     4
     """
+
     def __init__(self, upstream, predicate, *args, **kwargs):
         if predicate is None:
             predicate = _truthy
         self.predicate = predicate
-        stream_name = kwargs.pop('stream_name', None)
+        stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
         self.args = args
 
@@ -112,6 +116,7 @@ class unique(Stream):
         self.key = key
         if history:
             from zict import LRU
+
             self.seen = LRU(history, self.seen)
             self.non_hash_seen = deque(maxlen=history)
 
@@ -143,7 +148,6 @@ def _first(node, f):
         del n
 
 
-
 @Stream.register_api()
 class combine_latest(_combine_latest):
     """ Combine multiple streams together to a stream of tuples
@@ -166,12 +170,11 @@ class combine_latest(_combine_latest):
     """
 
     def __init__(self, *upstreams, **kwargs):
-        first = kwargs.pop('first', None)
+        first = kwargs.pop("first", None)
 
         _combine_latest.__init__(self, *upstreams, **kwargs)
         if first:
             _first(self, first)
-
 
 
 @Stream.register_api()
@@ -193,7 +196,7 @@ class zip(_zip):
     """
 
     def __init__(self, *upstreams, **kwargs):
-        first = kwargs.pop('first', None)
+        first = kwargs.pop("first", None)
 
         _zip.__init__(self, *upstreams, **kwargs)
         if first:
@@ -222,8 +225,9 @@ class zip_latest(_zip_latest):
         Stream.combine_latest
         Stream.zip
         """
+
     def __init__(self, *upstreams, **kwargs):
-        first = kwargs.pop('first', None)
+        first = kwargs.pop("first", None)
 
         _zip_latest.__init__(self, *upstreams, **kwargs)
         if first:
