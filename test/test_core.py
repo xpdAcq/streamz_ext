@@ -101,7 +101,7 @@ def test_combine_latest_first():
     b = Stream()
     c = a.zip(b)
 
-    z = c.starmap(add)
+    z = c.starmap(op.add)
     zz = z.combine_latest(b, emit_on=0, first=b)
     L = zz.sink_to_list()
 
