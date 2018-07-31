@@ -1,10 +1,10 @@
-from operator import add
+import operator as op
 
-from streamz_ext import Stream
 try:
     from streamz.tests.test_core import *
 except ImportError as e:
     pass
+from streamz_ext import Stream
 
 
 def test_star_sink():
@@ -96,7 +96,7 @@ def test_filter_args_kwargs():
     assert L[0] is 1
 
 
-def test_first():
+def test_combine_latest_first():
     a = Stream()
     b = Stream()
     c = a.zip(b)
@@ -108,3 +108,27 @@ def test_first():
     a.emit(1)
     b.emit(1)
     assert len(L) == 1
+
+
+def test_zip_first():
+    a = Stream()
+    b = Stream()
+    c = a.zip(b).starmap(op.sub)
+    d = a.zip(b, first=True).starmap(op.add)
+    L = c.union(d).sink_to_list()
+
+    a.emit(1)
+    b.emit(1)
+    assert L == [2, 0]
+
+
+def test_zip_latest_first():
+    a = Stream()
+    b = Stream()
+    c = a.zip_latest(b).starmap(op.sub)
+    d = a.zip_latest(b, first=True).starmap(op.add)
+    L = c.union(d).sink_to_list()
+
+    a.emit(1)
+    b.emit(1)
+    assert L == [2, 0]
