@@ -1,0 +1,14 @@
+**Added:**
+
+* ``zip`` and ``zip_latest`` take in ``first`` kwarg so that those nodes can
+  be run first (rewriting the execution graph order)
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None

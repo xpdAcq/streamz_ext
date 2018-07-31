@@ -1,10 +1,10 @@
-from operator import add
+import operator as op
 
-from streamz_ext import Stream
 try:
     from streamz.tests.test_core import *
 except ImportError as e:
     pass
+from streamz_ext import Stream
 
 
 def test_star_sink():
@@ -25,22 +25,22 @@ def test_unique_dict():
     source = Stream()
     L = source.unique(history=1).sink_to_list()
 
-    source.emit({'a': 1})
-    source.emit({'a': 1})
-    source.emit({'b': 1})
+    source.emit({"a": 1})
+    source.emit({"a": 1})
+    source.emit({"b": 1})
 
-    assert L == [{'a': 1}, {'b': 1}]
+    assert L == [{"a": 1}, {"b": 1}]
 
 
 def test_unique_list():
     source = Stream()
     L = source.unique(history=1).sink_to_list()
 
-    source.emit(['a'])
-    source.emit(['a'])
-    source.emit(['b'])
+    source.emit(["a"])
+    source.emit(["a"])
+    source.emit(["b"])
 
-    assert L == [['a'], ['b']]
+    assert L == [["a"], ["b"]]
 
 
 def test_execution_order():
@@ -50,7 +50,7 @@ def test_execution_order():
         b = s.pluck(1)
         a = s.pluck(0)
         l = a.combine_latest(b, emit_on=a).sink_to_list()
-        z = [(1, 'red'), (2, 'blue'), (3, 'green')]
+        z = [(1, "red"), (2, "blue"), (3, "green")]
         for zz in z:
             s.emit(zz)
         L.append((l,))
@@ -63,7 +63,7 @@ def test_execution_order():
         a = s.pluck(0)
         b = s.pluck(1)
         l = a.combine_latest(b, emit_on=a).sink_to_list()
-        z = [(1, 'red'), (2, 'blue'), (3, 'green')]
+        z = [(1, "red"), (2, "blue"), (3, "green")]
         for zz in z:
             s.emit(zz)
         L2.append((l,))
@@ -96,15 +96,39 @@ def test_filter_args_kwargs():
     assert L[0] is 1
 
 
-def test_first():
+def test_combine_latest_first():
     a = Stream()
     b = Stream()
     c = a.zip(b)
 
-    z = c.starmap(add)
+    z = c.starmap(op.add)
     zz = z.combine_latest(b, emit_on=0, first=b)
     L = zz.sink_to_list()
 
     a.emit(1)
     b.emit(1)
     assert len(L) == 1
+
+
+def test_zip_first():
+    a = Stream()
+    b = Stream()
+    c = a.zip(b).starmap(op.sub)
+    d = a.zip(b, first=True).starmap(op.add)
+    L = c.union(d).sink_to_list()
+
+    a.emit(1)
+    b.emit(1)
+    assert L == [2, 0]
+
+
+def test_zip_latest_first():
+    a = Stream()
+    b = Stream()
+    c = a.zip_latest(b).starmap(op.sub)
+    d = a.zip_latest(b, first=True).starmap(op.add)
+    L = c.union(d).sink_to_list()
+
+    a.emit(1)
+    b.emit(1)
+    assert L == [2, 0]

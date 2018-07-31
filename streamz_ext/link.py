@@ -17,7 +17,8 @@ def micro_link(input_graph, output_graph):
             input_graph[name].connect(output_graph[name])
     # TODO: idiomatic way to do this? (essentially left update)
     input_graph.update(
-        {k: v for k, v in output_graph.items() if k not in input_graph})
+        {k: v for k, v in output_graph.items() if k not in input_graph}
+    )
 
 
 # TODO: support bypass? Maybe that should be a separate pipeline optimization
