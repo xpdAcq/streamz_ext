@@ -4,6 +4,18 @@ streamz_ext Change Log
 
 .. current developments
 
+v0.2.1
+====================
+
+**Added:**
+
+* Tools for linking pipeline chunks together
+* ``zip`` and ``zip_latest`` take in ``first`` kwarg so that those nodes can
+  be run first (rewriting the execution graph order)
+
+
+
+
 v0.2.0
 ====================
 
