@@ -6,6 +6,7 @@ from grave import plot_network
 from streamz import combine_latest
 from streamz.graph import *
 from streamz.graph import _clean_text
+
 from streamz_ext import Stream
 
 
@@ -227,7 +228,6 @@ def run_vis(node, source_node=False, **kwargs):
         def wrapps(*args, **kwargs):
             g.nodes[node_name]["status"] = "running"
             gv.update()
-            plt.pause(.1)
             try:
                 ret = func(*args, **kwargs)
             except Exception as e:
