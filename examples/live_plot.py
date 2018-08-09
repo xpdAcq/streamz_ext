@@ -8,10 +8,12 @@ source = Stream()
 def sleep_inc(x):
     if x == 5:
         raise RuntimeError()
+    plt.pause(.1)
     return x + 1
 
 
 def print_sleep(x):
+    plt.pause(.1)
     print(x)
 
 
@@ -31,7 +33,7 @@ plt.pause(.1)
 for i in range(10):
     try:
         source.emit(i)
-        plt.pause(.1)
+        # plt.pause(10)
     except RuntimeError:
         pass
 plt.show()
