@@ -6,9 +6,9 @@ source = Stream()
 
 
 def sleep_inc(x):
-    if x == 5:
+    if x == 9:
         raise RuntimeError()
-    plt.pause(.1)
+    plt.pause(1)
     return x + 1
 
 
@@ -18,7 +18,8 @@ def print_sleep(x):
 
 
 b = source.map(sleep_inc)
-b.sink(print_sleep)
+c = b.map(sleep_inc)
+c.sink(print_sleep)
 b.sink(print_sleep)
 gv = run_vis(
     source,
