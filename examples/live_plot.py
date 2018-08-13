@@ -25,7 +25,7 @@ gv = run_vis(
     source,
     source_node=True,
     edge_style={"color": "k"},
-    node_label_style={"font_size": 10},
+    node_label_style={"font_size": 15},
     edge_label_style=lambda x: {"label": x["label"], "font_size": 15},
     node_style=node_style,
     force_draw=True,
