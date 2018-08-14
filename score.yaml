@@ -32,6 +32,9 @@ run:
   grave:
     default:
       pip: 'git+https://github.com/networkx/grave.git@#egg=grave'
+  networkx:
+    default:
+      conda: networkx
 test:
   pytest:
     default:
