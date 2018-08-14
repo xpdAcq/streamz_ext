@@ -31,7 +31,7 @@ run:
       conda: matplotlib
   grave:
     default:
-      pip: 'git+htps://github.com/networkx/grave.git@egg=grave'
+      pip: 'git+https://github.com/networkx/grave.git@egg=grave'
 test:
   pytest:
     default:
