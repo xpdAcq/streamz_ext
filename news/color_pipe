@@ -1,0 +1,15 @@
+**Added:**
+
+* ``graph`` provides tooling for live pipeline visualization, detailing
+  current node status
+* ``examples`` folder and ``live_plot.py`` for an example using the live plot
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None

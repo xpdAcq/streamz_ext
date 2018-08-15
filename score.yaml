@@ -26,6 +26,15 @@ run:
   distributed:
     default:
       conda: distributed
+  matplotlib:
+    default:
+      conda: matplotlib
+  grave:
+    default:
+      pip: 'git+https://github.com/networkx/grave.git@#egg=grave'
+  networkx:
+    default:
+      conda: networkx
 test:
   pytest:
     default:
