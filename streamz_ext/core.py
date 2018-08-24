@@ -135,7 +135,21 @@ class unique(Stream):
                 return self._emit(x)
 
 
-def _first(node, f):
+def first(node, f=True):
+    """Promote current node to first in the execution order
+
+    Parameters
+    ----------
+    node : Streamz instance
+        Node to be promoted
+    f : bool or Sequence of Streamz
+        The upstream node(s) to promote this node for. If True, promote all
+        upstream nodes. Defaults to True
+
+    Returns
+    -------
+
+    """
     if f is True:
         f = node.upstreams
     if not isinstance(f, Sequence):
@@ -174,7 +188,7 @@ class combine_latest(_combine_latest):
 
         _combine_latest.__init__(self, *upstreams, **kwargs)
         if first:
-            _first(self, first)
+            first(self, first)
 
 
 @Stream.register_api()
@@ -200,7 +214,7 @@ class zip(_zip):
 
         _zip.__init__(self, *upstreams, **kwargs)
         if first:
-            _first(self, first)
+            first(self, first)
 
 
 @Stream.register_api()
@@ -231,4 +245,4 @@ class zip_latest(_zip_latest):
 
         _zip_latest.__init__(self, *upstreams, **kwargs)
         if first:
-            _first(self, first)
+            first(self, first)
