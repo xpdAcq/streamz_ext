@@ -3,11 +3,13 @@ from operator import add
 import time
 
 from tornado import gen
+import pytest
 
-from distributed.utils_test import inc  # flake8: noqa
+from distributed.utils_test import inc, slowinc  # flake8: noqa
 from streamz.utils_test import gen_test
 from streamz_ext import Stream
 from streamz_ext.thread import thread_scatter as scatter
+
 
 @gen_test()
 def test_map():
@@ -22,6 +24,7 @@ def test_map():
     assert L == [1, 2, 3, 4, 5]
     assert all(isinstance(f, Future) for f in futures_L)
 
+
 @gen_test()
 def test_scan():
     source = Stream(asynchronous=True)
@@ -34,6 +37,7 @@ def test_scan():
 
     assert L == [1, 3, 6, 10, 15]
     assert all(isinstance(f, Future) for f in futures_L)
+
 
 @gen_test()
 def test_scan_state():
@@ -49,6 +53,7 @@ def test_scan_state():
 
     assert L == [0, 1, 3]
 
+
 @gen_test()
 def test_zip():
     a = Stream(asynchronous=True)
@@ -63,6 +68,7 @@ def test_zip():
     yield b.emit("b")
 
     assert L == [(1, "a"), (2, "b")]
+
 
 @gen_test()
 def test_starmap():
@@ -82,12 +88,9 @@ def test_starmap():
 
 
 @gen_test()
-def test_map():
-    source = Stream(
-        asynchronous=True
-    )
-    futures = (scatter(source)
-               )
+def test_buffer2():
+    source = Stream(asynchronous=True)
+    futures = scatter(source)
     futures_L = futures.sink_to_list()
     L = futures.buffer(10).gather().sink_to_list()
 
@@ -99,3 +102,34 @@ def test_map():
 
     assert L == [0, 1, 2, 3, 4]
     assert all(isinstance(f, Future) for f in futures_L)
+
+
+@pytest.mark.slow
+@gen_test()
+def test_buffer():
+    source = Stream(asynchronous=True)
+    L = (
+        source.thread_scatter()
+        .map(slowinc, delay=0.5)
+        .buffer(5)
+        .gather()
+        .sink_to_list()
+    )
+
+    start = time.time()
+    for i in range(5):
+        yield source.emit(i)
+    end = time.time()
+    assert end - start < 0.5
+
+    for i in range(5, 10):
+        yield source.emit(i)
+
+    end2 = time.time()
+    assert end2 - start > (0.5 / 3)
+
+    while len(L) < 10:
+        yield gen.sleep(0.01)
+        assert time.time() - start < 5
+
+    assert L == list(map(inc, range(10)))

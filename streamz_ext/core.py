@@ -11,8 +11,15 @@ from collections.abc import Sequence
 
 import toolz
 from streamz.core import _global_sinks, _truthy
-from streamz.core import get_io_loop, identity, sync, logger, no_default, \
-    _html_update_streams, thread_state
+from streamz.core import (
+    get_io_loop,
+    identity,
+    sync,
+    logger,
+    no_default,
+    _html_update_streams,
+    thread_state,
+)
 from streamz.orderedweakset import OrderedWeakrefSet
 from tornado import gen
 from tornado.locks import Condition
@@ -63,15 +70,23 @@ class Stream(object):
     >>> L  # and the actions happen at the sinks
     ['1', '2', '3', '4', '5']
     """
-    _graphviz_shape = 'ellipse'
-    _graphviz_style = 'rounded,filled'
-    _graphviz_fillcolor = 'white'
+
+    _graphviz_shape = "ellipse"
+    _graphviz_style = "rounded,filled"
+    _graphviz_fillcolor = "white"
     _graphviz_orientation = 0
 
-    str_list = ['func', 'predicate', 'n', 'interval']
+    str_list = ["func", "predicate", "n", "interval"]
 
-    def __init__(self, upstream=None, upstreams=None, stream_name=None,
-                 loop=None, asynchronous=None, ensure_io_loop=False):
+    def __init__(
+        self,
+        upstream=None,
+        upstreams=None,
+        stream_name=None,
+        loop=None,
+        asynchronous=None,
+        ensure_io_loop=False,
+    ):
         self.downstreams = OrderedWeakrefSet()
         if upstreams is not None:
             self.upstreams = list(upstreams)
@@ -133,7 +148,9 @@ class Stream(object):
         """
         if self.asynchronous is not None:
             if self.asynchronous is not asynchronous:
-                raise ValueError("Stream has both asynchronous and synchronous elements")
+                raise ValueError(
+                    "Stream has both asynchronous and synchronous elements"
+                )
         else:
             self.asynchronous = asynchronous
             for upstream in self.upstreams:
@@ -170,12 +187,15 @@ class Stream(object):
 
             >>> Stream.foo(...)  # Foo operates as a static method
         """
+
         def _(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
                 return func(*args, **kwargs)
+
             setattr(cls, func.__name__, modifier(wrapped))
             return func
+
         return _
 
     def start(self):
@@ -186,33 +206,33 @@ class Stream(object):
     def __str__(self):
         s_list = []
         if self.name:
-            s_list.append('{}; {}'.format(self.name, self.__class__.__name__))
+            s_list.append("{}; {}".format(self.name, self.__class__.__name__))
         else:
             s_list.append(self.__class__.__name__)
 
         for m in self.str_list:
-            s = ''
+            s = ""
             at = getattr(self, m, None)
             if at:
                 if not callable(at):
                     s = str(at)
-                elif hasattr(at, '__name__'):
+                elif hasattr(at, "__name__"):
                     s = getattr(self, m).__name__
-                elif hasattr(at.__class__, '__name__'):
+                elif hasattr(at.__class__, "__name__"):
                     s = getattr(self, m).__class__.__name__
                 else:
                     s = None
             if s:
-                s_list.append('{}={}'.format(m, s))
+                s_list.append("{}={}".format(m, s))
         if len(s_list) <= 2:
-            s_list = [term.split('=')[-1] for term in s_list]
+            s_list = [term.split("=")[-1] for term in s_list]
 
         text = "<"
         text += s_list[0]
         if len(s_list) > 1:
-            text += ': '
-            text += ', '.join(s_list[1:])
-        text += '>'
+            text += ": "
+            text += ", ".join(s_list[1:])
+        text += ">"
         return text
 
     __repr__ = __str__
@@ -250,7 +270,7 @@ class Stream(object):
                 ss.destroy()
                 _html_update_streams.remove(ss)  # trigger gc
 
-        output.observe(remove_stream, '_view_count')
+        output.observe(remove_stream, "_view_count")
 
         return output._ipython_display_(**kwargs)
 
@@ -271,7 +291,7 @@ class Stream(object):
         This is typically done only at source Streams but can theortically be
         done at any point
         """
-        ts_async = getattr(thread_state, 'asynchronous', False)
+        ts_async = getattr(thread_state, "asynchronous", False)
         if self.loop is None or asynchronous or self.asynchronous or ts_async:
             if not ts_async:
                 thread_state.asynchronous = True
@@ -282,6 +302,7 @@ class Stream(object):
             finally:
                 thread_state.asynchronous = ts_async
         else:
+
             @gen.coroutine
             def _():
                 thread_state.asynchronous = True
@@ -291,6 +312,7 @@ class Stream(object):
                     del thread_state.asynchronous
 
                 raise gen.Return(result)
+
             sync(self.loop, _)
 
     def update(self, x, who=None):
@@ -304,13 +326,13 @@ class Stream(object):
         return self
 
     def connect(self, downstream):
-        ''' Connect this stream to a downstream element.
+        """ Connect this stream to a downstream element.
 
         Parameters
         ----------
         downstream: Stream
             The downstream stream to connect to
-        '''
+        """
         self.downstreams.add(downstream)
 
         if downstream.upstreams == [None]:
@@ -319,13 +341,13 @@ class Stream(object):
             downstream.upstreams.append(self)
 
     def disconnect(self, downstream):
-        ''' Disconnect this stream to a downstream element.
+        """ Disconnect this stream to a downstream element.
 
         Parameters
         ----------
         downstream: Stream
             The downstream stream to disconnect from
-        '''
+        """
         self.downstreams.remove(downstream)
 
         downstream.upstreams.remove(self)
@@ -349,10 +371,12 @@ class Stream(object):
 
     def scatter(self, **kwargs):
         from .dask import scatter
+
         return scatter(self, **kwargs)
 
     def thread_scatter(self, **kwargs):
         from .thread import thread_scatter
+
         return thread_scatter(self, **kwargs)
 
     def remove(self, predicate):
@@ -385,12 +409,13 @@ class Stream(object):
 
     def frequencies(self, **kwargs):
         """ Count occurrences of elements """
+
         def update_frequencies(last, x):
             return toolz.assoc(last, x, last.get(x, 0) + 1)
 
         return self.scan(update_frequencies, start={}, **kwargs)
 
-    def visualize(self, filename='mystream.png', source_node=False, **kwargs):
+    def visualize(self, filename="mystream.png", source_node=False, **kwargs):
         """Render the computation of this object's task graph using graphviz.
 
         Requires ``graphviz`` to be installed.
@@ -406,6 +431,7 @@ class Stream(object):
             Graph attributes to pass to graphviz like ``rankdir="LR"``
         """
         from .graph import visualize
+
         return visualize(self, filename, source_node=source_node, **kwargs)
 
     def to_dataframe(self, example):
@@ -421,6 +447,7 @@ class Stream(object):
         >>> source.emit(pd.DataFrame(...))  # doctest: +SKIP
         """
         from .dataframe import DataFrame
+
         return DataFrame(stream=self, example=example)
 
     def to_batch(self, **kwargs):
@@ -441,6 +468,7 @@ class Stream(object):
         ...              {'name': 'Charlie', 'value': 6}])
         """
         from .batch import Batch
+
         return Batch(stream=self, **kwargs)
 
 
@@ -466,7 +494,8 @@ class sink(Stream):
     map
     Stream.sink_to_list
     """
-    _graphviz_shape = 'trapezium'
+
+    _graphviz_shape = "trapezium"
 
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = func
@@ -510,10 +539,11 @@ class map(Stream):
     6
     8
     """
+
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = func
         # this is one of a few stream specific kwargs
-        stream_name = kwargs.pop('stream_name', None)
+        stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
         self.args = args
 
@@ -555,10 +585,11 @@ class starmap(Stream):
     6
     8
     """
+
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = func
         # this is one of a few stream specific kwargs
-        stream_name = kwargs.pop('stream_name', None)
+        stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
         self.args = args
 
@@ -610,16 +641,18 @@ class accumulate(Stream):
     6
     10
     """
-    _graphviz_shape = 'box'
 
-    def __init__(self, upstream, func, start=no_default, returns_state=False,
-                 **kwargs):
+    _graphviz_shape = "box"
+
+    def __init__(
+        self, upstream, func, start=no_default, returns_state=False, **kwargs
+    ):
         self.func = func
         self.kwargs = kwargs
         self.state = start
         self.returns_state = returns_state
         # this is one of a few stream specific kwargs
-        stream_name = kwargs.pop('stream_name', None)
+        stream_name = kwargs.pop("stream_name", None)
         Stream.__init__(self, upstream, stream_name=stream_name)
 
     def update(self, x, who=None):
@@ -654,7 +687,8 @@ class partition(Stream):
     (3, 4, 5)
     (6, 7, 8)
     """
-    _graphviz_shape = 'diamond'
+
+    _graphviz_shape = "diamond"
 
     def __init__(self, upstream, n, **kwargs):
         self.n = n
@@ -687,7 +721,8 @@ class sliding_window(Stream):
     (4, 5, 6)
     (5, 6, 7)
     """
-    _graphviz_shape = 'diamond'
+
+    _graphviz_shape = "diamond"
 
     def __init__(self, upstream, n, **kwargs):
         self.n = n
@@ -705,6 +740,7 @@ class sliding_window(Stream):
 def convert_interval(interval):
     if isinstance(interval, str):
         import pandas as pd
+
         interval = pd.Timedelta(interval).total_seconds()
     return interval
 
@@ -717,7 +753,8 @@ class timed_window(Stream):
     seen so far.  This can help to batch data coming off of a high-volume
     stream.
     """
-    _graphviz_shape = 'octagon'
+
+    _graphviz_shape = "octagon"
 
     def __init__(self, upstream, interval, **kwargs):
         self.interval = convert_interval(interval)
@@ -744,7 +781,8 @@ class timed_window(Stream):
 @Stream.register_api()
 class delay(Stream):
     """ Add a time delay to results """
-    _graphviz_shape = 'octagon'
+
+    _graphviz_shape = "octagon"
 
     def __init__(self, upstream, interval, **kwargs):
         self.interval = convert_interval(interval)
@@ -780,7 +818,8 @@ class rate_limit(Stream):
     interval: float
         Time in seconds
     """
-    _graphviz_shape = 'octagon'
+
+    _graphviz_shape = "octagon"
 
     def __init__(self, upstream, interval, **kwargs):
         self.interval = convert_interval(interval)
@@ -806,7 +845,8 @@ class buffer(Stream):
     This can help to smooth flow through the system when backpressure is
     applied.
     """
-    _graphviz_shape = 'diamond'
+
+    _graphviz_shape = "diamond"
 
     def __init__(self, upstream, n, **kwargs):
         self.queue = Queue(maxsize=n)
@@ -826,7 +866,7 @@ class buffer(Stream):
 
 
 @Stream.register_api()
-class zip(Stream):
+class _zip(Stream):
     """ Combine streams together into a stream of tuples
 
     We emit a new tuple once all streams have produce a new tuple.
@@ -836,20 +876,28 @@ class zip(Stream):
     combine_latest
     zip_latest
     """
+
     _graphviz_orientation = 270
-    _graphviz_shape = 'triangle'
+    _graphviz_shape = "triangle"
 
     def __init__(self, *upstreams, **kwargs):
-        self.maxsize = kwargs.pop('maxsize', 10)
+        self.maxsize = kwargs.pop("maxsize", 10)
         self.condition = Condition()
-        self.literals = [(i, val) for i, val in enumerate(upstreams)
-                         if not isinstance(val, Stream)]
+        self.literals = [
+            (i, val)
+            for i, val in enumerate(upstreams)
+            if not isinstance(val, Stream)
+        ]
 
-        self.buffers = {upstream: deque()
-                        for upstream in upstreams
-                        if isinstance(upstream, Stream)}
+        self.buffers = {
+            upstream: deque()
+            for upstream in upstreams
+            if isinstance(upstream, Stream)
+        }
 
-        upstreams2 = [upstream for upstream in upstreams if isinstance(upstream, Stream)]
+        upstreams2 = [
+            upstream for upstream in upstreams if isinstance(upstream, Stream)
+        ]
 
         Stream.__init__(self, upstreams=upstreams2, **kwargs)
 
@@ -883,7 +931,7 @@ class zip(Stream):
 
 
 @Stream.register_api()
-class combine_latest(Stream):
+class _combine_latest(Stream):
     """ Combine multiple streams together to a stream of tuples
 
     This will emit a new tuple of all of the most recent elements seen from
@@ -899,19 +947,21 @@ class combine_latest(Stream):
     --------
     zip
     """
+
     _graphviz_orientation = 270
-    _graphviz_shape = 'triangle'
+    _graphviz_shape = "triangle"
 
     def __init__(self, *upstreams, **kwargs):
-        emit_on = kwargs.pop('emit_on', None)
+        emit_on = kwargs.pop("emit_on", None)
 
         self.last = [None for _ in upstreams]
         self.missing = set(upstreams)
         if emit_on is not None:
             if not isinstance(emit_on, Iterable):
-                emit_on = (emit_on, )
+                emit_on = (emit_on,)
             emit_on = tuple(
-                upstreams[x] if isinstance(x, int) else x for x in emit_on)
+                upstreams[x] if isinstance(x, int) else x for x in emit_on
+            )
             self.emit_on = emit_on
         else:
             self.emit_on = upstreams
@@ -949,6 +999,7 @@ class flatten(Stream):
     --------
     partition
     """
+
     def update(self, x, who=None):
         L = []
         for item in x:
@@ -973,6 +1024,7 @@ class union(Stream):
     Stream.zip
     Stream.combine_latest
     """
+
     def __init__(self, *upstreams, **kwargs):
         super(union, self).__init__(upstreams=upstreams, **kwargs)
 
@@ -1007,6 +1059,7 @@ class pluck(Stream):
     'Alice'
     'Bob'
     """
+
     def __init__(self, upstream, pick, **kwargs):
         self.pick = pick
         super(pluck, self).__init__(upstream, **kwargs)
@@ -1036,6 +1089,7 @@ class collect(Stream):
     ...
     [1, 2]
     """
+
     def __init__(self, upstream, cache=None, **kwargs):
         if cache is None:
             cache = deque()
@@ -1053,7 +1107,7 @@ class collect(Stream):
 
 
 @Stream.register_api()
-class zip_latest(Stream):
+class _zip_latest(Stream):
     """Combine multiple streams together to a stream of tuples
 
     The stream which this is called from is lossless. All elements from
@@ -1068,6 +1122,7 @@ class zip_latest(Stream):
     Stream.combine_latest
     Stream.zip
     """
+
     def __init__(self, lossless, *upstreams, **kwargs):
         upstreams = (lossless,) + upstreams
         self.last = [None for _ in upstreams]
@@ -1107,7 +1162,8 @@ class latest(Stream):
     --------
     >>> source.map(f).latest().map(g)  # doctest: +SKIP
     """
-    _graphviz_shape = 'octagon'
+
+    _graphviz_shape = "octagon"
 
     def __init__(self, upstream, **kwargs):
         self.condition = Condition()
@@ -1128,7 +1184,9 @@ class latest(Stream):
             [x] = self.next
             yield self._emit(x)
 
+
 # ---------------------------------
+
 
 @Stream.register_api()
 class starsink(Stream):
@@ -1200,12 +1258,11 @@ class filter(Stream):
             predicate = _truthy
         self.predicate = predicate
         stream_name = kwargs.pop("stream_name", None)
-        loop = kwargs.pop('loop', None)
+        loop = kwargs.pop("loop", None)
         self.kwargs = kwargs
         self.args = args
 
-        Stream.__init__(self, upstream,
-                        stream_name=stream_name, loop=loop)
+        Stream.__init__(self, upstream, stream_name=stream_name, loop=loop)
 
     def update(self, x, who=None):
         if self.predicate(x, *self.args, **self.kwargs):
