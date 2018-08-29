@@ -12,7 +12,7 @@ from time import sleep
 import pytest
 import streamz_ext as sz
 from streamz_ext.sources import sink_to_file, PeriodicCallback
-from streamz.utils_test import (
+from streamz_ext.utils_test import (
     inc,
     double,
     gen_test,
