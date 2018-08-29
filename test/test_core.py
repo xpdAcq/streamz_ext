@@ -1216,4 +1216,4 @@ def test_start():
 
 
 if sys.version_info >= (3, 5):
-    from streamz.tests.py3_test_core import *  # noqa
+    from streamz_ext.tests.py3_test_core import *  # noqa
