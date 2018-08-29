@@ -14,7 +14,7 @@ from .core import Stream, identity
 
 
 def result_maybe(future_maybe):
-    # duck typing
+    # duck typing ?
     try:
         return future_maybe.result()
     except AttributeError:
@@ -119,13 +119,19 @@ class gather(core.Stream):
     scatter
     """
     def __init__(self, *args, **kwargs):
-        if 'ensure_io_loop' not in kwargs:
-            kwargs['ensure_io_loop'] = True
         super().__init__(*args, **kwargs)
 
     @gen.coroutine
     def update(self, x, who=None):
-        result = yield x
+        # If we have a sequence of futures await each one
+        if isinstance(x, tuple):
+            final_result = []
+            for sub_x in x:
+                yx = yield sub_x
+                final_result.append(yx)
+            result = tuple(final_result)
+        else:
+            result = yield x
         result2 = yield self._emit(result)
         raise gen.Return(result2)
 
