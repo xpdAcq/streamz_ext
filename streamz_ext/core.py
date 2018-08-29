@@ -1,29 +1,53 @@
 from __future__ import absolute_import, division, print_function
 
 import functools
+import logging
+import threading
 import weakref
-from collections import Iterable
-from collections import MutableMapping
-from collections import deque
-from time import time
 from collections import Hashable
+from collections import Iterable
+from collections import deque
 from collections.abc import Sequence
+from time import time
 
 import toolz
-from streamz.core import _global_sinks, _truthy
-from streamz.core import (
-    get_io_loop,
-    identity,
-    sync,
-    logger,
-    no_default,
-    _html_update_streams,
-    thread_state,
-)
+from streamz.core import _truthy, sync
 from streamz.orderedweakset import OrderedWeakrefSet
 from tornado import gen
+from tornado.ioloop import IOLoop
 from tornado.locks import Condition
 from tornado.queues import Queue
+
+no_default = "--no-default--"
+
+_global_sinks = set()
+
+_html_update_streams = set()
+
+thread_state = threading.local()
+
+logger = logging.getLogger(__name__)
+
+
+_io_loops = []
+
+
+def get_io_loop(asynchronous=None):
+    if asynchronous:
+        return IOLoop.current()
+
+    if not _io_loops:
+        loop = IOLoop()
+        thread = threading.Thread(target=loop.start)
+        thread.daemon = True
+        thread.start()
+        _io_loops.append(loop)
+
+    return _io_loops[-1]
+
+
+def identity(x):
+    return x
 
 
 class Stream(object):
