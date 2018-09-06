@@ -135,7 +135,7 @@ class unique(Stream):
                 return self._emit(x)
 
 
-def first(node, f=True):
+def move_to_first(node, f=True):
     """Promote current node to first in the execution order
 
     Parameters
@@ -184,11 +184,11 @@ class combine_latest(_combine_latest):
     """
 
     def __init__(self, *upstreams, **kwargs):
-        first_bool = kwargs.pop("first_bool", None)
+        first = kwargs.pop("first", None)
 
         _combine_latest.__init__(self, *upstreams, **kwargs)
-        if first_bool:
-            first(self, first_bool)
+        if first:
+            move_to_first(self, first)
 
 
 @Stream.register_api()
@@ -210,11 +210,11 @@ class zip(_zip):
     """
 
     def __init__(self, *upstreams, **kwargs):
-        first_bool = kwargs.pop("first_bool", None)
+        first = kwargs.pop("first", None)
 
         _zip.__init__(self, *upstreams, **kwargs)
-        if first_bool:
-            first(self, first_bool)
+        if first:
+            move_to_first(self, first)
 
 
 @Stream.register_api()
@@ -241,8 +241,8 @@ class zip_latest(_zip_latest):
         """
 
     def __init__(self, *upstreams, **kwargs):
-        first_bool = kwargs.pop("first_bool", None)
+        first = kwargs.pop("first", None)
 
         _zip_latest.__init__(self, *upstreams, **kwargs)
-        if first_bool:
-            first(self, first_bool)
+        if first:
+            move_to_first(self, first)
