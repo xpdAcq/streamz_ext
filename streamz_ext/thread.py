@@ -95,7 +95,6 @@ class thread_scatter(ThreadStream):
     @gen.coroutine
     def update(self, x, who=None):
         client = default_client()
-        # future = x
         future = client.submit(identity, x)
         f = yield self._emit(future)
         raise gen.Return(f)
