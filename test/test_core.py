@@ -102,7 +102,7 @@ def test_combine_latest_first():
     c = a.zip(b)
 
     z = c.starmap(op.add)
-    zz = z.combine_latest(b, emit_on=0, first=b)
+    zz = z.combine_latest(b, emit_on=0, first_bool=b)
     L = zz.sink_to_list()
 
     a.emit(1)
@@ -114,7 +114,7 @@ def test_zip_first():
     a = Stream()
     b = Stream()
     c = a.zip(b).starmap(op.sub)
-    d = a.zip(b, first=True).starmap(op.add)
+    d = a.zip(b, first_bool=True).starmap(op.add)
     L = c.union(d).sink_to_list()
 
     a.emit(1)
@@ -126,7 +126,7 @@ def test_zip_latest_first():
     a = Stream()
     b = Stream()
     c = a.zip_latest(b).starmap(op.sub)
-    d = a.zip_latest(b, first=True).starmap(op.add)
+    d = a.zip_latest(b, first_bool=True).starmap(op.add)
     L = c.union(d).sink_to_list()
 
     a.emit(1)

@@ -184,11 +184,11 @@ class combine_latest(_combine_latest):
     """
 
     def __init__(self, *upstreams, **kwargs):
-        first = kwargs.pop("first", None)
+        first_bool = kwargs.pop("first_bool", None)
 
         _combine_latest.__init__(self, *upstreams, **kwargs)
-        if first:
-            first(self, first)
+        if first_bool:
+            first(self, first_bool)
 
 
 @Stream.register_api()
@@ -210,11 +210,11 @@ class zip(_zip):
     """
 
     def __init__(self, *upstreams, **kwargs):
-        first = kwargs.pop("first", None)
+        first_bool = kwargs.pop("first_bool", None)
 
         _zip.__init__(self, *upstreams, **kwargs)
-        if first:
-            first(self, first)
+        if first_bool:
+            first(self, first_bool)
 
 
 @Stream.register_api()
@@ -241,8 +241,8 @@ class zip_latest(_zip_latest):
         """
 
     def __init__(self, *upstreams, **kwargs):
-        first = kwargs.pop("first", None)
+        first_bool = kwargs.pop("first_bool", None)
 
         _zip_latest.__init__(self, *upstreams, **kwargs)
-        if first:
-            first(self, first)
+        if first_bool:
+            first(self, first_bool)
