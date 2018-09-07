@@ -146,9 +146,11 @@ def move_to_first(node, f=True):
         The upstream node(s) to promote this node for. If True, promote all
         upstream nodes. Defaults to True
 
-    Returns
-    -------
-
+    Notes
+    -----
+    This is often used for saving data, since saving data before the rest of
+    the data is processed makes sure that all the data that can be saved
+    (before an exception is hit) is saved.
     """
     if f is True:
         f = node.upstreams
