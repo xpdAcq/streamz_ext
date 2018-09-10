@@ -36,6 +36,9 @@ run:
   dask:
     default:
       conda: dask
+  graphviz:
+    default:
+      conda: graphviz
 test:
   pytest:
     default:
