@@ -33,6 +33,9 @@ run:
   networkx:
     default:
       conda: networkx
+  dask:
+    default:
+      conda: dask
 test:
   pytest:
     default:
