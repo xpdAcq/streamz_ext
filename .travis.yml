@@ -34,6 +34,6 @@ install:
 
 script:
   - set -e
-  - coverage run run_tests.py --runslow
+  - coverage run run_tests.py
   - coverage report -m
   - codecov
