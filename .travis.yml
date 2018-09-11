@@ -30,6 +30,7 @@ install:
   - conda create --yes -n testenv python=$TRAVIS_PYTHON_VERSION orch
   - source activate testenv
   - orch score.yaml
+  - pip install git+https://github.com/dask/distributed.git --upgrade --no-deps
 
 script:
   - set -e

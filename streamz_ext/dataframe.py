@@ -1,1 +1,1 @@
-from streamz.dataframe import *
+from streamz_ext.dataframe import *

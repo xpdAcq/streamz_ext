@@ -12,11 +12,9 @@ build:
     default:
       conda: python
 run:
-  streamz:
+  pandas:
     default:
-      conda: streamz
-    bleeding:
-      pip: 'git+https://github.com/mrocklin/streamz.git#egg=streamz'
+      conda: pandas
   toolz:
     default:
       conda: toolz
@@ -35,6 +33,12 @@ run:
   networkx:
     default:
       conda: networkx
+  dask:
+    default:
+      conda: dask
+  graphviz:
+    default:
+      conda: graphviz
 test:
   pytest:
     default:
