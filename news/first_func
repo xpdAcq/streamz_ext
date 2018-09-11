@@ -1,0 +1,14 @@
+**Added:** None
+
+**Changed:**
+
+* ``core._first`` is now ``core.move_to_first`` and returns the node passed in
+  allowing for it to be used as a modification to pipelines
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
