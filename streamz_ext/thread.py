@@ -60,14 +60,14 @@ class ThreadStream(Stream):
     """ A Parallel stream using Dask
 
     This object is fully compliant with the ``streamz.core.Stream`` object but
-    uses a Dask client for execution.  Operations like ``map`` and
-    ``accumulate`` submit functions to run on the Dask instance using
-    ``dask.distributed.Client.submit`` and pass around Dask futures.
+    uses a Thread Pool for execution.  Operations like ``map`` and
+    ``accumulate`` submit functions to run on the Thread Pool using
+    ``concurrent.futures.ThreadPoolExecutor.submit`` and pass around futures.
     Time-based operations like ``timed_window``, buffer, and so on operate as
     normal.
 
-    Typically one transfers between normal Stream and DaskStream objects using
-    the ``Stream.scatter()`` and ``DaskStream.gather()`` methods.
+    Typically one transfers between normal Stream and ThreadStream objects using
+    the ``Stream.scatter()`` and ``ThreadStream.gather()`` methods.
 
     Examples
     --------
@@ -102,7 +102,7 @@ class thread_scatter(ThreadStream):
 
 @ThreadStream.register_api()
 class gather(core.Stream):
-    """ Wait on and gather results from DaskStream to local Stream
+    """ Wait on and gather results from ThreadStream to local Stream
 
     This waits on every result in the stream and then gathers that result back
     to the local stream.  Warning, this can restrict parallelism.  It is common
