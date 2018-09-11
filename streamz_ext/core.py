@@ -162,6 +162,7 @@ def move_to_first(node, f=True):
                 break
         upstream.downstreams.data._od.move_to_end(n, last=False)
         del n
+    return node
 
 
 @Stream.register_api()
