@@ -1,0 +1,15 @@
+**Added:**
+
+* General parallel executor support via ``ParallelStream``
+
+**Changed:**
+
+* Monkey patched ``streamz.Stream`` to use ``ParallelStream`` for scatter
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
