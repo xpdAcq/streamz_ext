@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, Future
 from functools import wraps
 from operator import getitem
 
+from streamz.core import _truthy
 from tornado import gen
 from tornado.ioloop import IOLoop
 
@@ -12,17 +13,38 @@ from dask.compatibility import apply
 from . import core, sources
 from .core import Stream, identity
 
+NULL_COMPUTE = '~~NULL_COMPUTE~~'
+
 
 def result_maybe(future_maybe):
-    # duck typing ?
     try:
         return future_maybe.result()
     except AttributeError:
         return future_maybe
-    # if isinstance(future_maybe, Future):
-    #     return future_maybe.result()
-    # else:
-    #     return future_maybe
+
+
+def return_null(func):
+    @wraps(func)
+    def inner(x, *args, **kwargs):
+        tv = func(x, *args, **kwargs)
+        if tv:
+            return x
+        else:
+            return NULL_COMPUTE
+
+    return inner
+
+
+def filter_null_wrapper(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        if (any(a == NULL_COMPUTE for a in args)
+                or any(v == NULL_COMPUTE for v in kwargs.values())):
+            return NULL_COMPUTE
+        else:
+            return func(*args, **kwargs)
+
+    return inner
 
 
 def delayed_execution(func):
@@ -133,14 +155,15 @@ class gather(core.Stream):
             result = tuple(final_result)
         else:
             result = yield x
-        result2 = yield self._emit(result)
-        raise gen.Return(result2)
+        if result != NULL_COMPUTE:
+            result2 = yield self._emit(result)
+            raise gen.Return(result2)
 
 
 @ThreadStream.register_api()
 class map(ThreadStream):
     def __init__(self, upstream, func, *args, **kwargs):
-        self.func = func
+        self.func = filter_null_wrapper(func)
         self.kwargs = kwargs
         self.args = args
 
@@ -155,14 +178,14 @@ class map(ThreadStream):
 @ThreadStream.register_api()
 class accumulate(ThreadStream):
     def __init__(
-        self,
-        upstream,
-        func,
-        start=core.no_default,
-        returns_state=False,
-        **kwargs
+            self,
+            upstream,
+            func,
+            start=core.no_default,
+            returns_state=False,
+            **kwargs
     ):
-        self.func = func
+        self.func = filter_null_wrapper(func)
         self.state = start
         self.returns_state = returns_state
         self.kwargs = kwargs
@@ -187,7 +210,7 @@ class accumulate(ThreadStream):
 @ThreadStream.register_api()
 class starmap(ThreadStream):
     def __init__(self, upstream, func, **kwargs):
-        self.func = func
+        self.func = filter_null_wrapper(func)
         stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
 
@@ -196,6 +219,24 @@ class starmap(ThreadStream):
     def update(self, x, who=None):
         client = default_client()
         result = client.submit(apply, self.func, x, self.kwargs)
+        return self._emit(result)
+
+
+@ThreadStream.register_api()
+class filter(ThreadStream):
+    def __init__(self, upstream, predicate, *args, **kwargs):
+        if predicate is None:
+            predicate = _truthy
+        self.predicate = return_null(predicate)
+        stream_name = kwargs.pop("stream_name", None)
+        self.kwargs = kwargs
+        self.args = args
+
+        Stream.__init__(self, upstream, stream_name=stream_name)
+
+    def update(self, x, who=None):
+        client = default_client()
+        result = client.submit(self.predicate, x, *self.args, **self.kwargs)
         return self._emit(result)
 
 
@@ -261,16 +302,6 @@ class filenames(ThreadStream, sources.filenames):
 
 @ThreadStream.register_api(staticmethod)
 class from_textfile(ThreadStream, sources.from_textfile):
-    pass
-
-
-@ThreadStream.register_api()
-class unique(ThreadStream, core.unique):
-    pass
-
-
-@ThreadStream.register_api()
-class filter(ThreadStream, core.filter):
     pass
 
 
