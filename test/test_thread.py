@@ -148,3 +148,16 @@ def test_filter():
     assert L == [0, 2, 4]
     assert all(isinstance(f, Future) for f in futures_L)
 
+
+@gen_test()
+def test_filter_map():
+    source = Stream(asynchronous=True)
+    futures = scatter(source).filter(lambda x: x % 2 == 0).map(inc)
+    futures_L = futures.sink_to_list()
+    L = futures.gather().sink_to_list()
+
+    for i in range(5):
+        yield source.emit(i)
+
+    assert L == [1, 3, 5]
+    assert all(isinstance(f, Future) for f in futures_L)
