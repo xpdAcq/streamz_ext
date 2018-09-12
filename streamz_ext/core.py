@@ -20,6 +20,48 @@ logger = logging.getLogger(__name__)
 
 _io_loops = []
 
+def sync(loop, func, *args, **kwargs):
+    """
+    Run coroutine in loop running in separate thread.
+    """
+    # This was taken from distrbuted/utils.py
+    timeout = kwargs.pop('callback_timeout', None)
+
+    def make_coro():
+        coro = gen.maybe_future(func(*args, **kwargs))
+        if timeout is None:
+            return coro
+        else:
+            return gen.with_timeout(timedelta(seconds=timeout), coro)
+
+    e = threading.Event()
+    main_tid = get_thread_identity()
+    result = [None]
+    error = [False]
+
+    @gen.coroutine
+    def f():
+        try:
+            if main_tid == get_thread_identity():
+                raise RuntimeError("sync() called from thread of running loop")
+            yield gen.moment
+            thread_state.asynchronous = True
+            result[0] = yield make_coro()
+        except Exception as exc:
+            logger.exception(exc)
+            error[0] = sys.exc_info()
+        finally:
+            thread_state.asynchronous = False
+            e.set()
+
+    loop.add_callback(f)
+    while not e.is_set():
+        e.wait(1000000)
+    if error[0]:
+        six.reraise(*error[0])
+    else:
+        return result[0]
+
 
 def get_io_loop(asynchronous=None):
     if asynchronous:
@@ -135,6 +177,39 @@ def scatter(self, **kwargs):
 
 
 Stream.scatter = scatter
+
+
+def emit(self, x, asynchronous=False):
+    """ Push data into the stream at this point
+
+    This is typically done only at source Streams but can theortically be
+    done at any point
+    """
+    ts_async = getattr(thread_state, 'asynchronous', False)
+    if self.loop is None or asynchronous or self.asynchronous or ts_async:
+        if not ts_async:
+            thread_state.asynchronous = True
+        try:
+            result = self._emit(x)
+            if self.loop:
+                return gen.convert_yielded(result)
+        finally:
+            thread_state.asynchronous = ts_async
+    else:
+        @gen.coroutine
+        def _():
+            thread_state.asynchronous = True
+            try:
+                result = yield self._emit(x)
+            finally:
+                del thread_state.asynchronous
+
+            raise gen.Return(result)
+
+        sync(self.loop, _)
+
+
+Stream.emit = emit
 
 
 @Stream.register_api()
@@ -394,46 +469,3 @@ def destroy_pipeline(source_node: Stream):
         # some source nodes are tuples and some are bad wekrefs
         except (AttributeError, KeyError) as e:
             pass
-
-
-def sync(loop, func, *args, **kwargs):
-    """
-    Run coroutine in loop running in separate thread.
-    """
-    # This was taken from distrbuted/utils.py
-    timeout = kwargs.pop('callback_timeout', None)
-
-    def make_coro():
-        coro = gen.maybe_future(func(*args, **kwargs))
-        if timeout is None:
-            return coro
-        else:
-            return gen.with_timeout(timedelta(seconds=timeout), coro)
-
-    e = threading.Event()
-    main_tid = get_thread_identity()
-    result = [None]
-    error = [False]
-
-    @gen.coroutine
-    def f():
-        try:
-            if main_tid == get_thread_identity():
-                raise RuntimeError("sync() called from thread of running loop")
-            yield gen.moment
-            thread_state.asynchronous = True
-            result[0] = yield make_coro()
-        except Exception as exc:
-            logger.exception(exc)
-            error[0] = sys.exc_info()
-        finally:
-            thread_state.asynchronous = False
-            e.set()
-
-    loop.add_callback(f)
-    while not e.is_set():
-        e.wait(1000000)
-    if error[0]:
-        six.reraise(*error[0])
-    else:
-        return result[0]
