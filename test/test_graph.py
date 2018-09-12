@@ -12,11 +12,13 @@ def test_run_vis_smoke():
     source = Stream()
 
     def sleep_inc(x):
-        if x == 5:
+        if x == 9:
             raise RuntimeError()
+        plt.pause(.1)
         return x + 1
 
     def print_sleep(x):
+        plt.pause(.1)
         print(x)
 
     b = source.map(sleep_inc)
@@ -38,3 +40,4 @@ def test_run_vis_smoke():
             plt.pause(.1)
         except RuntimeError:
             pass
+    plt.pause(.1)

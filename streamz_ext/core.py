@@ -1,5 +1,6 @@
 from collections import Hashable
 from collections.abc import Sequence
+import threading
 
 from streamz.core import *
 from streamz.core import (
@@ -8,6 +9,124 @@ from streamz.core import (
     zip_latest as _zip_latest,
 )
 from streamz.core import _global_sinks, _truthy
+
+no_default = '--no-default--'
+
+_html_update_streams = set()
+
+thread_state = threading.local()
+
+logger = logging.getLogger(__name__)
+
+_io_loops = []
+
+
+def get_io_loop(asynchronous=None):
+    if asynchronous:
+        return IOLoop.current()
+
+    if not _io_loops:
+        loop = IOLoop()
+        thread = threading.Thread(target=loop.start)
+        thread.daemon = True
+        thread.start()
+        _io_loops.append(loop)
+
+    return _io_loops[-1]
+
+
+def stream_init(self, upstream=None, upstreams=None, stream_name=None,
+                loop=None, asynchronous=None, ensure_io_loop=False):
+    self.downstreams = OrderedWeakrefSet()
+    if upstreams is not None:
+        self.upstreams = list(upstreams)
+    else:
+        self.upstreams = [upstream]
+
+    self._set_asynchronous(asynchronous)
+    self._set_loop(loop)
+    if ensure_io_loop and not self.loop:
+        self._set_asynchronous(False)
+    if self.loop is None and self.asynchronous is not None:
+        self._set_loop(get_io_loop(self.asynchronous))
+
+    for upstream in self.upstreams:
+        if upstream:
+            upstream.downstreams.add(self)
+
+    self.name = stream_name
+
+
+Stream.__init__ = stream_init
+
+
+def _set_loop(self, loop):
+    self.loop = None
+    if loop is not None:
+        self._inform_loop(loop)
+    else:
+        for upstream in self.upstreams:
+            if upstream and upstream.loop:
+                self.loop = upstream.loop
+                break
+
+
+Stream._set_loop = _set_loop
+
+
+def _inform_loop(self, loop):
+    """
+    Percolate information about an event loop to the rest of the stream
+    """
+    if self.loop is not None:
+        if self.loop is not loop:
+            raise ValueError("Two different event loops active")
+    else:
+        self.loop = loop
+        for upstream in self.upstreams:
+            if upstream:
+                upstream._inform_loop(loop)
+        for downstream in self.downstreams:
+            if downstream:
+                downstream._inform_loop(loop)
+
+
+Stream._inform_loop = Stream._inform_loop
+
+
+def _set_asynchronous(self, asynchronous):
+    self.asynchronous = None
+    if asynchronous is not None:
+        self._inform_asynchronous(asynchronous)
+    else:
+        for upstream in self.upstreams:
+            if upstream and upstream.asynchronous:
+                self.asynchronous = upstream.asynchronous
+                break
+
+
+Stream._set_asynchronous = _set_asynchronous
+
+
+def _inform_asynchronous(self, asynchronous):
+    """
+    Percolate information about an event loop to the rest of the stream
+    """
+    if self.asynchronous is not None:
+        if self.asynchronous is not asynchronous:
+            raise ValueError(
+                "Stream has both asynchronous and synchronous elements")
+    else:
+        self.asynchronous = asynchronous
+        for upstream in self.upstreams:
+            if upstream:
+                upstream._inform_asynchronous(asynchronous)
+        for downstream in self.downstreams:
+            if downstream:
+                downstream._inform_asynchronous(asynchronous)
+
+
+Stream._inform_asynchronous = _inform_asynchronous
 
 
 def scatter(self, **kwargs):
