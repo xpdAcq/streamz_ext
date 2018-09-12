@@ -51,3 +51,7 @@ test:
   pytest-env:
     default:
       conda: pytest-env
+  pytest-tornado:
+    default:
+      conda: pytest-tornado
+
