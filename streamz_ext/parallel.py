@@ -11,7 +11,7 @@ from .core import Stream, identity
 
 
 class ParallelStream(Stream):
-    """ A Parallel stream using Dask
+    """ A Parallel stream using multiple backends
 
     This object is fully compliant with the ``streamz.core.Stream`` object but
     uses a client for execution.  Operations like ``map`` and
@@ -28,14 +28,23 @@ class ParallelStream(Stream):
     >>> from dask.distributed import Client
     >>> client = Client()
 
-    >>> from streamz import Stream
+    >>> from streamz_ext import Stream
     >>> source = Stream()
     >>> source.scatter().map(func).accumulate(binop).gather().sink(...)
+
+    # This runs on thread backends
+    >>> from streamz_ext import Stream
+    >>> source = Stream()
+    >>> source.scatter(backend='thread').map(func).accumulate(binop).gather().sink(...)
 
     See Also
     --------
     dask.distributed.Client
     """
+
+    @classmethod
+    def _get_name(cls):
+        return cls.__class__.___name__
 
     def __init__(self, *args, backend='dask', **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,9 +96,6 @@ class gather(ParallelStream):
     buffer
     scatter
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @gen.coroutine
     def update(self, x, who=None):
