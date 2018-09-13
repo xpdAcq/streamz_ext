@@ -4,7 +4,7 @@ try:
     from streamz.tests.test_core import *
 except ImportError as e:
     pass
-from streamz_ext import Stream
+from streamz_ext import Stream, destroy_pipeline
 
 
 def test_star_sink():
@@ -132,3 +132,10 @@ def test_zip_latest_first():
     a.emit(1)
     b.emit(1)
     assert L == [2, 0]
+
+
+def test_destroy_pipeline():
+    source = Stream()
+    pipeline = source.map(inc).zip(source).sink(print)
+    destroy_pipeline(source)
+    assert pipeline.upstreams == []
