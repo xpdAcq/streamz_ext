@@ -136,6 +136,6 @@ def test_zip_latest_first():
 
 def test_destroy_pipeline():
     source = Stream()
-    pipeline = source.map(inc).zip(source).sink(print)
+    pipeline = source.map(op.add).zip(source).sink(print)
     destroy_pipeline(source)
     assert pipeline.upstreams == []
