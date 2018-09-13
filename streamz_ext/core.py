@@ -249,3 +249,21 @@ class zip_latest(_zip_latest):
         _zip_latest.__init__(self, *upstreams, **kwargs)
         if first:
             move_to_first(self, first)
+
+
+def destroy_pipeline(source_node: Stream):
+    """Destroy all the nodes attached to the source
+
+    Parameters
+    ----------
+    source_node : Stream
+        The source node for the pipeline
+    """
+    for ds in list(source_node.downstreams):
+        destroy_pipeline(ds)
+    if source_node.upstreams:
+        try:
+            source_node.destroy()
+        # some source nodes are tuples and some are bad wekrefs
+        except (AttributeError, KeyError) as e:
+            pass
