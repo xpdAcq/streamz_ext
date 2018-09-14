@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from operator import getitem
+from collections import Sequence
 
 from streamz.core import _truthy
 from tornado import gen
@@ -147,7 +148,7 @@ class gather(core.Stream):
     @gen.coroutine
     def update(self, x, who=None):
         # If we have a sequence of futures await each one
-        if isinstance(x, tuple):
+        if isinstance(x, Sequence):
             final_result = []
             for sub_x in x:
                 yx = yield sub_x
@@ -155,7 +156,8 @@ class gather(core.Stream):
             result = tuple(final_result)
         else:
             result = yield x
-        if result != NULL_COMPUTE:
+        if not ((isinstance(result, Sequence) and any(
+                r == NULL_COMPUTE for r in result)) or result == NULL_COMPUTE):
             result2 = yield self._emit(result)
             raise gen.Return(result2)
 
