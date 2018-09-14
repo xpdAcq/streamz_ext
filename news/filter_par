@@ -1,0 +1,13 @@
+**Added:**
+
+* ``streamz_ext.thread.filter`` a node class for filtering data in parallel processing
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
