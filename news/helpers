@@ -1,0 +1,15 @@
+**Added:**
+
+* ``streamz_ext.core.destroy_pipeline`` for destroying pipelines
+
+**Changed:**
+
+* Created a new linker which takes in functions and a namespace
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
