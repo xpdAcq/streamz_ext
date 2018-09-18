@@ -71,9 +71,9 @@ def test_scan_state(backend):
 
     L = (
         scatter(source, backend=backend)
-        .scan(f, returns_state=True)
-        .gather()
-        .sink_to_list()
+            .scan(f, returns_state=True)
+            .gather()
+            .sink_to_list()
     )
     for i in range(3):
         yield source.emit(i)
@@ -141,10 +141,10 @@ def test_buffer(backend):
     source = Stream(asynchronous=True)
     L = (
         source.scatter(backend=backend)
-        .map(slowinc, delay=0.5)
-        .buffer(5)
-        .gather()
-        .sink_to_list()
+            .map(slowinc, delay=0.5)
+            .buffer(5)
+            .gather()
+            .sink_to_list()
     )
 
     start = time.time()
@@ -164,3 +164,50 @@ def test_buffer(backend):
         assert time.time() - start < 5
 
     assert L == list(map(inc, range(10)))
+
+
+@pytest.mark.parametrize("backend", test_params)
+@gen_test()
+def test_filter(backend):
+    source = Stream(asynchronous=True)
+    futures = scatter(source, backend=backend).filter(lambda x: x % 2 == 0)
+    print(type(futures))
+    futures_L = futures.sink_to_list()
+    L = futures.gather().sink_to_list()
+
+    for i in range(5):
+        yield source.emit(i)
+
+    assert L == [0, 2, 4]
+    assert all(isinstance(f, Future) for f in futures_L)
+
+
+@pytest.mark.parametrize("backend", test_params)
+@gen_test()
+def test_filter_map(backend):
+    source = Stream(asynchronous=True)
+    futures = scatter(source, backend=backend).filter(lambda x: x % 2 == 0).map(inc)
+    futures_L = futures.sink_to_list()
+    L = futures.gather().sink_to_list()
+
+    for i in range(5):
+        yield source.emit(i)
+
+    assert L == [1, 3, 5]
+    assert all(isinstance(f, Future) for f in futures_L)
+
+
+@pytest.mark.parametrize("backend", test_params)
+@gen_test()
+def test_filter_zip(backend):
+    source = Stream(asynchronous=True)
+    s = scatter(source, backend=backend)
+    futures = s.filter(lambda x: x % 2 == 0).zip(s)
+    futures_L = futures.sink_to_list()
+    L = futures.gather().sink_to_list()
+
+    for i in range(5):
+        yield source.emit(i)
+
+    assert L == [(a, a) for a in [0, 2, 4]]
+    assert all(isinstance(f[0], Future) for f in futures_L)

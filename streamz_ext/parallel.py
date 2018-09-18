@@ -1,3 +1,7 @@
+from functools import wraps
+
+from streamz import Stream
+from streamz.core import _truthy
 from streamz_ext.core import get_io_loop
 from streamz_ext.clients import DEFAULT_BACKENDS
 from operator import getitem
@@ -8,6 +12,34 @@ from dask.compatibility import apply
 
 from . import core, sources
 from .core import Stream, identity
+
+from collections import Sequence
+
+NULL_COMPUTE = '~~NULL_COMPUTE~~'
+
+
+def return_null(func):
+    @wraps(func)
+    def inner(x, *args, **kwargs):
+        tv = func(x, *args, **kwargs)
+        if tv:
+            return x
+        else:
+            return NULL_COMPUTE
+
+    return inner
+
+
+def filter_null_wrapper(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        if (any(a == NULL_COMPUTE for a in args)
+                or any(v == NULL_COMPUTE for v in kwargs.values())):
+            return NULL_COMPUTE
+        else:
+            return func(*args, **kwargs)
+
+    return inner
 
 
 class ParallelStream(Stream):
@@ -112,14 +144,16 @@ class gather(ParallelStream):
     def update(self, x, who=None):
         client = self.default_client()
         result = yield client.gather(x, asynchronous=True)
-        result2 = yield self._emit(result)
-        raise gen.Return(result2)
+        if not ((isinstance(result, Sequence) and any(
+                r == NULL_COMPUTE for r in result)) or result == NULL_COMPUTE):
+            result2 = yield self._emit(result)
+            raise gen.Return(result2)
 
 
 @ParallelStream.register_api()
 class map(ParallelStream):
     def __init__(self, upstream, func, *args, **kwargs):
-        self.func = func
+        self.func = filter_null_wrapper(func)
         self.kwargs = kwargs
         self.args = args
 
@@ -134,14 +168,14 @@ class map(ParallelStream):
 @ParallelStream.register_api()
 class accumulate(ParallelStream):
     def __init__(
-        self,
-        upstream,
-        func,
-        start=core.no_default,
-        returns_state=False,
-        **kwargs
+            self,
+            upstream,
+            func,
+            start=core.no_default,
+            returns_state=False,
+            **kwargs
     ):
-        self.func = func
+        self.func = filter_null_wrapper(func)
         self.state = start
         self.returns_state = returns_state
         self.kwargs = kwargs
@@ -166,7 +200,7 @@ class accumulate(ParallelStream):
 @ParallelStream.register_api()
 class starmap(ParallelStream):
     def __init__(self, upstream, func, **kwargs):
-        self.func = func
+        self.func = filter_null_wrapper(func)
         stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
 
@@ -175,6 +209,24 @@ class starmap(ParallelStream):
     def update(self, x, who=None):
         client = self.default_client()
         result = client.submit(apply, self.func, x, self.kwargs)
+        return self._emit(result)
+
+
+@ParallelStream.register_api()
+class filter(ParallelStream):
+    def __init__(self, upstream, predicate, *args, **kwargs):
+        if predicate is None:
+            predicate = _truthy
+        self.predicate = return_null(predicate)
+        stream_name = kwargs.pop("stream_name", None)
+        self.kwargs = kwargs
+        self.args = args
+
+        ParallelStream.__init__(self, upstream, stream_name=stream_name)
+
+    def update(self, x, who=None):
+        client = self.default_client()
+        result = client.submit(self.predicate, x, *self.args, **self.kwargs)
         return self._emit(result)
 
 
