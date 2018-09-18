@@ -35,6 +35,9 @@ run:
   networkx:
     default:
       conda: networkx
+  graphviz:
+    default:
+      conda: graphviz
 test:
   pytest:
     default:
