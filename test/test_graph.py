@@ -41,3 +41,4 @@ def test_run_vis_smoke():
         except RuntimeError:
             pass
     plt.pause(.1)
+    plt.close("all")
