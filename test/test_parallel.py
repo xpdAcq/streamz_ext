@@ -12,10 +12,10 @@ from streamz_ext.clients import thread_default_client
 
 gen_test = pytest.mark.gen_test
 
-test_params = ['thread', thread_default_client]
+test_params = ["thread", thread_default_client]
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
 def test_scatter_gather(backend):
     source = Stream(asynchronous=True)
@@ -30,7 +30,7 @@ def test_scatter_gather(backend):
     assert all(isinstance(f, Future) for f in futures_L)
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
 def test_map(backend):
     source = Stream(asynchronous=True)
@@ -45,7 +45,7 @@ def test_map(backend):
     assert all(isinstance(f, Future) for f in futures_L)
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
 def test_scan(backend):
     source = Stream(asynchronous=True)
@@ -60,7 +60,7 @@ def test_scan(backend):
     assert all(isinstance(f, Future) for f in futures_L)
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
 def test_scan_state(backend):
     source = Stream(asynchronous=True)
@@ -69,20 +69,24 @@ def test_scan_state(backend):
         acc = acc + i
         return acc, acc
 
-    L = scatter(source, backend=backend).scan(f,
-                                              returns_state=True).gather().sink_to_list()
+    L = (
+        scatter(source, backend=backend)
+        .scan(f, returns_state=True)
+        .gather()
+        .sink_to_list()
+    )
     for i in range(3):
         yield source.emit(i)
 
     assert L == [0, 1, 3]
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
 def test_zip(backend):
     a = Stream(asynchronous=True)
     b = Stream(asynchronous=True)
-    c = scatter(a, backend=backend).zip(scatter(b, backend='thread'))
+    c = scatter(a, backend=backend).zip(scatter(b, backend="thread"))
 
     L = c.gather().sink_to_list()
 
@@ -94,7 +98,7 @@ def test_zip(backend):
     assert L == [(1, "a"), (2, "b")]
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
 def test_starmap(backend):
     def add(x, y, z=0):
@@ -112,7 +116,7 @@ def test_starmap(backend):
     assert L == [10, 12, 14, 16, 18]
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
 def test_buffer2(backend):
     source = Stream(asynchronous=True)
@@ -130,17 +134,17 @@ def test_buffer2(backend):
     assert all(isinstance(f, Future) for f in futures_L)
 
 
-@pytest.mark.parametrize('backend', test_params)
+@pytest.mark.parametrize("backend", test_params)
 @pytest.mark.slow
 @gen_test()
 def test_buffer(backend):
     source = Stream(asynchronous=True)
     L = (
         source.scatter(backend=backend)
-            .map(slowinc, delay=0.5)
-            .buffer(5)
-            .gather()
-            .sink_to_list()
+        .map(slowinc, delay=0.5)
+        .buffer(5)
+        .gather()
+        .sink_to_list()
     )
 
     start = time.time()

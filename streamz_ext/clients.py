@@ -41,7 +41,7 @@ def executor_to_client(executor):
         f = executor.submit(identity, x)
         return f
 
-    executor.scatter = getattr(executor, 'scatter', scatter)
+    executor.scatter = getattr(executor, "scatter", scatter)
 
     @gen.coroutine
     def gather(x, asynchronous=True):
@@ -56,7 +56,7 @@ def executor_to_client(executor):
             result = yield x
         return result
 
-    executor.gather = getattr(executor, 'gather', gather)
+    executor.gather = getattr(executor, "gather", gather)
     return executor
 
 
@@ -67,5 +67,7 @@ def thread_default_client():
     return ex
 
 
-DEFAULT_BACKENDS = {'dask': dask_default_client,
-                    'thread': thread_default_client}
+DEFAULT_BACKENDS = {
+    "dask": dask_default_client,
+    "thread": thread_default_client,
+}
