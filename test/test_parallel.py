@@ -71,9 +71,9 @@ def test_scan_state(backend):
 
     L = (
         scatter(source, backend=backend)
-            .scan(f, returns_state=True)
-            .gather()
-            .sink_to_list()
+        .scan(f, returns_state=True)
+        .gather()
+        .sink_to_list()
     )
     for i in range(3):
         yield source.emit(i)
@@ -141,10 +141,10 @@ def test_buffer(backend):
     source = Stream(asynchronous=True)
     L = (
         source.scatter(backend=backend)
-            .map(slowinc, delay=0.5)
-            .buffer(5)
-            .gather()
-            .sink_to_list()
+        .map(slowinc, delay=0.5)
+        .buffer(5)
+        .gather()
+        .sink_to_list()
     )
 
     start = time.time()
@@ -186,7 +186,9 @@ def test_filter(backend):
 @gen_test()
 def test_filter_map(backend):
     source = Stream(asynchronous=True)
-    futures = scatter(source, backend=backend).filter(lambda x: x % 2 == 0).map(inc)
+    futures = (
+        scatter(source, backend=backend).filter(lambda x: x % 2 == 0).map(inc)
+    )
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
 

@@ -15,7 +15,7 @@ from .core import Stream, identity
 
 from collections import Sequence
 
-NULL_COMPUTE = '~~NULL_COMPUTE~~'
+NULL_COMPUTE = "~~NULL_COMPUTE~~"
 
 
 def return_null(func):
@@ -33,8 +33,9 @@ def return_null(func):
 def filter_null_wrapper(func):
     @wraps(func)
     def inner(*args, **kwargs):
-        if (any(a == NULL_COMPUTE for a in args)
-                or any(v == NULL_COMPUTE for v in kwargs.values())):
+        if any(a == NULL_COMPUTE for a in args) or any(
+            v == NULL_COMPUTE for v in kwargs.values()
+        ):
             return NULL_COMPUTE
         else:
             return func(*args, **kwargs)
@@ -144,8 +145,13 @@ class gather(ParallelStream):
     def update(self, x, who=None):
         client = self.default_client()
         result = yield client.gather(x, asynchronous=True)
-        if not ((isinstance(result, Sequence) and any(
-                r == NULL_COMPUTE for r in result)) or result == NULL_COMPUTE):
+        if not (
+            (
+                isinstance(result, Sequence)
+                and any(r == NULL_COMPUTE for r in result)
+            )
+            or result == NULL_COMPUTE
+        ):
             result2 = yield self._emit(result)
             raise gen.Return(result2)
 
@@ -168,12 +174,12 @@ class map(ParallelStream):
 @ParallelStream.register_api()
 class accumulate(ParallelStream):
     def __init__(
-            self,
-            upstream,
-            func,
-            start=core.no_default,
-            returns_state=False,
-            **kwargs
+        self,
+        upstream,
+        func,
+        start=core.no_default,
+        returns_state=False,
+        **kwargs
     ):
         self.func = filter_null_wrapper(func)
         self.state = start

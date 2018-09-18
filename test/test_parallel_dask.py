@@ -117,10 +117,10 @@ def test_buffer(c, s, a, b):
     source = Stream(asynchronous=True)
     L = (
         source.scatter()
-            .map(slowinc, delay=0.5)
-            .buffer(5)
-            .gather()
-            .sink_to_list()
+        .map(slowinc, delay=0.5)
+        .buffer(5)
+        .gather()
+        .sink_to_list()
     )
 
     start = time.time()
@@ -211,8 +211,7 @@ def test_filter(c, s, a, b):
 @gen_cluster(client=True)
 def test_filter_map(c, s, a, b):
     source = Stream(asynchronous=True)
-    futures = scatter(source).filter(
-        lambda x: x % 2 == 0).map(inc)
+    futures = scatter(source).filter(lambda x: x % 2 == 0).map(inc)
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
 
