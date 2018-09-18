@@ -38,9 +38,9 @@ run:
   graphviz:
     default:
       conda: graphviz
-  pygraphviz:
+  python-graphviz:
     default:
-      conda: pygraphviz
+      conda: python-graphviz
 test:
   pytest:
     default:
