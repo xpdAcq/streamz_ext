@@ -17,6 +17,6 @@ setup(
     long_description=(
         open("README.rst").read() if exists("README.rst") else ""
     ),
-    install_requires=list(open("requirements.txt").read().strip().split("\n")),
+    # install_requires=list(open("requirements.txt").read().strip().split("\n")),
     zip_safe=False,
 )
