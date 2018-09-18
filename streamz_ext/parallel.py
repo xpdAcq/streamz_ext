@@ -32,10 +32,18 @@ class ParallelStream(Stream):
     >>> source = Stream()
     >>> source.scatter().map(func).accumulate(binop).gather().sink(...)
 
-    # This runs on thread backends
+    This runs on thread backends
     >>> from streamz_ext import Stream
     >>> source = Stream()
     >>> source.scatter(backend='thread').map(func).accumulate(binop).gather().sink(...)
+
+    ParallelStream also supports arbitrary backends, the backend must provide
+    a function which returns the `Client` like object to be used. The same
+    `Client` like object must be returned by the function so that all the nodes
+    can interact with the same resource pool.
+    >>> import distributed
+    >>> source = Stream()
+    >>> (source.scatter(backend=distributed.default_client).map(func).accumulate(binop).gather().sink(...))
 
     See Also
     --------
