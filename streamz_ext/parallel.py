@@ -236,15 +236,5 @@ class from_textfile(ParallelStream, sources.from_textfile):
 
 
 @ParallelStream.register_api()
-class unique(ParallelStream, core.unique):
-    pass
-
-
-@ParallelStream.register_api()
-class filter(ParallelStream, core.filter):
-    pass
-
-
-@ParallelStream.register_api()
 class pluck(ParallelStream, core.pluck):
     pass
