@@ -11,6 +11,12 @@ from streamz.core import (
 from streamz.core import _global_sinks, _truthy
 
 
+def scatter(self, **kwargs):
+    from .parallel import scatter
+    return scatter(self, **kwargs)
+
+Stream.scatter = scatter
+
 @Stream.register_api()
 class starsink(Stream):
     """ Apply a function on every element
