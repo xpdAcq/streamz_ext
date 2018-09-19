@@ -83,10 +83,6 @@ class ParallelStream(Stream):
     dask.distributed.Client
     """
 
-    @classmethod
-    def _get_name(cls):
-        return cls.__class__.___name__
-
     def __init__(self, *args, backend="dask", **kwargs):
         super().__init__(*args, **kwargs)
         upstream_backends = set(
