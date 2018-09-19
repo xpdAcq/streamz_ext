@@ -1,0 +1,13 @@
+**Added:** None
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:**
+
+* Monkey patch ``Stream.scatter`` to use the parallel backend
+
+**Security:** None
