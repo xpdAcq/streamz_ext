@@ -35,6 +35,12 @@ run:
   networkx:
     default:
       conda: networkx
+  graphviz:
+    default:
+      conda: graphviz
+  python-graphviz:
+    default:
+      conda: python-graphviz
 test:
   pytest:
     default:
@@ -51,3 +57,7 @@ test:
   pytest-env:
     default:
       conda: pytest-env
+  pytest-tornado:
+    default:
+      conda: pytest-tornado
+

@@ -1,5 +1,6 @@
 from collections import Hashable
 from collections.abc import Sequence
+import threading
 
 from streamz.core import *
 from streamz.core import (

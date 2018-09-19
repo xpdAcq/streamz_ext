@@ -6,15 +6,35 @@ from tornado import gen
 import pytest
 
 from distributed.utils_test import inc, slowinc  # flake8: noqa
-from streamz.utils_test import gen_test
 from streamz_ext import Stream
-from streamz_ext.thread import thread_scatter as scatter
+from streamz_ext.parallel import scatter
+from streamz_ext.clients import thread_default_client
+
+gen_test = pytest.mark.gen_test
+
+test_params = ["thread", thread_default_client]
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_map():
+def test_scatter_gather(backend):
     source = Stream(asynchronous=True)
-    futures = scatter(source).map(inc)
+    futures = scatter(source, backend=backend)
+    futures_L = futures.sink_to_list()
+    L = futures.gather().sink_to_list()
+
+    for i in range(5):
+        yield source.emit(i)
+
+    assert L == list(range(5))
+    assert all(isinstance(f, Future) for f in futures_L)
+
+
+@pytest.mark.parametrize("backend", test_params)
+@gen_test()
+def test_map(backend):
+    source = Stream(asynchronous=True)
+    futures = scatter(source, backend=backend).map(inc)
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
 
@@ -25,10 +45,11 @@ def test_map():
     assert all(isinstance(f, Future) for f in futures_L)
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_scan():
+def test_scan(backend):
     source = Stream(asynchronous=True)
-    futures = scatter(source).map(inc).scan(add)
+    futures = scatter(source, backend=backend).map(inc).scan(add)
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
 
@@ -39,26 +60,33 @@ def test_scan():
     assert all(isinstance(f, Future) for f in futures_L)
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_scan_state():
+def test_scan_state(backend):
     source = Stream(asynchronous=True)
 
     def f(acc, i):
         acc = acc + i
         return acc, acc
 
-    L = scatter(source).scan(f, returns_state=True).gather().sink_to_list()
+    L = (
+        scatter(source, backend=backend)
+        .scan(f, returns_state=True)
+        .gather()
+        .sink_to_list()
+    )
     for i in range(3):
         yield source.emit(i)
 
     assert L == [0, 1, 3]
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_zip():
+def test_zip(backend):
     a = Stream(asynchronous=True)
     b = Stream(asynchronous=True)
-    c = scatter(a).zip(scatter(b))
+    c = scatter(a, backend=backend).zip(scatter(b, backend="thread"))
 
     L = c.gather().sink_to_list()
 
@@ -70,13 +98,14 @@ def test_zip():
     assert L == [(1, "a"), (2, "b")]
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_starmap():
+def test_starmap(backend):
     def add(x, y, z=0):
         return x + y + z
 
     source = Stream(asynchronous=True)
-    futures = scatter(source).starmap(add, z=10)
+    futures = scatter(source, backend=backend).starmap(add, z=10)
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
 
@@ -87,10 +116,11 @@ def test_starmap():
     assert L == [10, 12, 14, 16, 18]
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_buffer2():
+def test_buffer2(backend):
     source = Stream(asynchronous=True)
-    futures = scatter(source)
+    futures = scatter(source, backend=backend)
     futures_L = futures.sink_to_list()
     L = futures.buffer(10).gather().sink_to_list()
 
@@ -104,12 +134,13 @@ def test_buffer2():
     assert all(isinstance(f, Future) for f in futures_L)
 
 
+@pytest.mark.parametrize("backend", test_params)
 @pytest.mark.slow
 @gen_test()
-def test_buffer():
+def test_buffer(backend):
     source = Stream(asynchronous=True)
     L = (
-        source.thread_scatter()
+        source.scatter(backend=backend)
         .map(slowinc, delay=0.5)
         .buffer(5)
         .gather()
@@ -135,10 +166,12 @@ def test_buffer():
     assert L == list(map(inc, range(10)))
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_filter():
+def test_filter(backend):
     source = Stream(asynchronous=True)
-    futures = scatter(source).filter(lambda x: x % 2 == 0)
+    futures = scatter(source, backend=backend).filter(lambda x: x % 2 == 0)
+    print(type(futures))
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
 
@@ -149,10 +182,13 @@ def test_filter():
     assert all(isinstance(f, Future) for f in futures_L)
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_filter_map():
+def test_filter_map(backend):
     source = Stream(asynchronous=True)
-    futures = scatter(source).filter(lambda x: x % 2 == 0).map(inc)
+    futures = (
+        scatter(source, backend=backend).filter(lambda x: x % 2 == 0).map(inc)
+    )
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
 
@@ -163,10 +199,11 @@ def test_filter_map():
     assert all(isinstance(f, Future) for f in futures_L)
 
 
+@pytest.mark.parametrize("backend", test_params)
 @gen_test()
-def test_filter_zip():
+def test_filter_zip(backend):
     source = Stream(asynchronous=True)
-    s = scatter(source)
+    s = scatter(source, backend=backend)
     futures = s.filter(lambda x: x % 2 == 0).zip(s)
     futures_L = futures.sink_to_list()
     L = futures.gather().sink_to_list()
