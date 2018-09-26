@@ -9,16 +9,19 @@ from tornado.ioloop import IOLoop
 from .core import identity
 
 
-def result_maybe(future_maybe):
-    if isinstance(future_maybe, Sequence):
-        aa = []
-        for a in future_maybe:
-            aa.append(result_maybe(a))
-        return aa
+def result_maybe(future_maybe, top=False):
     try:
         return future_maybe.result()
     except AttributeError:
+        if isinstance(future_maybe, Sequence):
+            aa = []
+            for a in future_maybe:
+                aa.append(result_maybe(a, top=False))
+            if isinstance(future_maybe, tuple):
+                aa = tuple(aa)
+            return aa
         return future_maybe
+
 
 
 def delayed_execution(func):
@@ -26,7 +29,6 @@ def delayed_execution(func):
     def inner(*args, **kwargs):
         args = tuple([result_maybe(v) for v in args])
         kwargs = {k: result_maybe(v) for k, v in kwargs.items()}
-        print("delayed", func, args)
         return func(*args, **kwargs)
 
     return inner

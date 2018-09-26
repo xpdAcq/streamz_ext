@@ -11,6 +11,15 @@ from zstreamz.core import (
 from zstreamz.core import _global_sinks, _truthy
 
 
+def apply(func, args, args2=None, kwargs=None):
+    if args2:
+        args = args + args2
+    if kwargs:
+        return func(*args, **kwargs)
+    else:
+        return func(*args)
+
+
 def scatter(self, **kwargs):
     from .parallel import scatter
 
@@ -277,3 +286,5 @@ def destroy_pipeline(source_node: Stream):
         # some source nodes are tuples and some are bad wekrefs
         except (AttributeError, KeyError) as e:
             pass
+
+

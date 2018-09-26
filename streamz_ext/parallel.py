@@ -1,6 +1,7 @@
+from concurrent.futures import Future
 from functools import wraps
 
-from zstreamz import Stream
+from streamz_ext import apply
 from zstreamz.core import _truthy, args_kwargs
 from streamz_ext.core import get_io_loop
 from streamz_ext.clients import DEFAULT_BACKENDS
@@ -8,10 +9,8 @@ from operator import getitem
 
 from tornado import gen
 
-from dask.compatibility import apply
-
 from . import core, sources
-from .core import Stream, identity
+from .core import Stream
 
 from collections import Sequence
 
@@ -38,7 +37,6 @@ def filter_null_wrapper(func):
         ):
             return NULL_COMPUTE
         else:
-            print("filter", args)
             return func(*args, **kwargs)
 
     return inner
@@ -160,10 +158,11 @@ class gather(ParallelStream):
 class map(ParallelStream):
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = filter_null_wrapper(func)
+        stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
         self.args = args
 
-        ParallelStream.__init__(self, upstream)
+        ParallelStream.__init__(self, upstream, stream_name=stream_name)
 
     def update(self, x, who=None):
         client = self.default_client()
@@ -185,8 +184,9 @@ class accumulate(ParallelStream):
         self.func = filter_null_wrapper(func)
         self.state = start
         self.returns_state = returns_state
+        stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
-        ParallelStream.__init__(self, upstream)
+        ParallelStream.__init__(self, upstream, stream_name=stream_name)
 
     def update(self, x, who=None):
         if self.state is core.no_default:
@@ -215,12 +215,9 @@ class starmap(ParallelStream):
 
         ParallelStream.__init__(self, upstream, stream_name=stream_name)
 
-    def update(self, x, who=None):
-        if not isinstance(x, tuple):
-            x = (x,)
-        y = x + self.args
+    def update(self, x: Future, who=None):
         client = self.default_client()
-        result = client.submit(apply, self.func, y, self.kwargs)
+        result = client.submit(apply, self.func, x, self.args, self.kwargs)
         return self._emit(result)
 
 

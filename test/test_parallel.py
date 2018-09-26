@@ -86,7 +86,7 @@ def test_scan_state(backend):
 def test_zip(backend):
     a = Stream(asynchronous=True)
     b = Stream(asynchronous=True)
-    c = scatter(a, backend=backend).zip(scatter(b, backend="thread"))
+    c = scatter(a, backend=backend).zip(scatter(b, backend=backend))
 
     L = c.gather().sink_to_list()
 
