@@ -1,1 +1,1 @@
-from streamz.dataframe import *
+from zstreamz.dataframe import *

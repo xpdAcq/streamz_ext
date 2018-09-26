@@ -1,1 +1,1 @@
-from streamz.sources import *
+from zstreamz.sources import *

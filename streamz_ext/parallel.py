@@ -1,7 +1,7 @@
 from functools import wraps
 
-from streamz import Stream
-from streamz.core import _truthy
+from zstreamz import Stream
+from zstreamz.core import _truthy, args_kwargs
 from streamz_ext.core import get_io_loop
 from streamz_ext.clients import DEFAULT_BACKENDS
 from operator import getitem
@@ -38,6 +38,7 @@ def filter_null_wrapper(func):
         ):
             return NULL_COMPUTE
         else:
+            print("filter", args)
             return func(*args, **kwargs)
 
     return inner
@@ -46,7 +47,7 @@ def filter_null_wrapper(func):
 class ParallelStream(Stream):
     """ A Parallel stream using multiple backends
 
-    This object is fully compliant with the ``streamz.core.Stream`` object but
+    This object is fully compliant with the ``zstreamz.core.Stream`` object but
     uses a client for execution.  Operations like ``map`` and
     ``accumulate`` submit functions to run on the client instance
     and pass around futures.
@@ -107,6 +108,7 @@ class ParallelStream(Stream):
                 self._set_loop(get_io_loop(self.asynchronous))
 
 
+@args_kwargs
 @core.Stream.register_api()
 @ParallelStream.register_api()
 class scatter(ParallelStream):
@@ -118,6 +120,7 @@ class scatter(ParallelStream):
         raise gen.Return(f)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class gather(ParallelStream):
     """ Wait on and gather results from ParallelStream to local Stream
@@ -152,6 +155,7 @@ class gather(ParallelStream):
             raise gen.Return(result2)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class map(ParallelStream):
     def __init__(self, upstream, func, *args, **kwargs):
@@ -167,6 +171,7 @@ class map(ParallelStream):
         return self._emit(result)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class accumulate(ParallelStream):
     def __init__(
@@ -199,21 +204,27 @@ class accumulate(ParallelStream):
             return self._emit(result)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class starmap(ParallelStream):
-    def __init__(self, upstream, func, **kwargs):
+    def __init__(self, upstream, func, *args, **kwargs):
         self.func = filter_null_wrapper(func)
         stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
+        self.args = args
 
         ParallelStream.__init__(self, upstream, stream_name=stream_name)
 
     def update(self, x, who=None):
+        if not isinstance(x, tuple):
+            x = (x,)
+        y = x + self.args
         client = self.default_client()
-        result = client.submit(apply, self.func, x, self.kwargs)
+        result = client.submit(apply, self.func, y, self.kwargs)
         return self._emit(result)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class filter(ParallelStream):
     def __init__(self, upstream, predicate, *args, **kwargs):
@@ -232,71 +243,85 @@ class filter(ParallelStream):
         return self._emit(result)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class buffer(ParallelStream, core.buffer):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class combine_latest(ParallelStream, core.combine_latest):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class delay(ParallelStream, core.delay):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class latest(ParallelStream, core.latest):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class partition(ParallelStream, core.partition):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class rate_limit(ParallelStream, core.rate_limit):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class sliding_window(ParallelStream, core.sliding_window):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class timed_window(ParallelStream, core.timed_window):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class union(ParallelStream, core.union):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class zip(ParallelStream, core.zip):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class zip_latest(ParallelStream, core.zip_latest):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api(staticmethod)
 class filenames(ParallelStream, sources.filenames):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api(staticmethod)
 class from_textfile(ParallelStream, sources.from_textfile):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class pluck(ParallelStream, core.pluck):
     pass

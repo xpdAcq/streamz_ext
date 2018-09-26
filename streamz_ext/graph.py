@@ -3,9 +3,9 @@ from weakref import ref
 import matplotlib.pyplot as plt
 import networkx as nx
 from grave import plot_network
-from streamz import combine_latest
-from streamz.graph import *
-from streamz.graph import _clean_text
+from zstreamz import combine_latest
+from zstreamz.graph import *
+from zstreamz.graph import _clean_text
 
 from streamz_ext import Stream
 
@@ -87,7 +87,7 @@ def readable_graph(node, source_node=False):
 
 
 class LiveGraphPlot(object):
-    """Live plotting of the streamz graph status"""
+    """Live plotting of the zstreamz graph status"""
 
     def __init__(
         self,

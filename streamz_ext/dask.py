@@ -1,1 +1,1 @@
-from streamz.dask import *
+from zstreamz.dask import *
