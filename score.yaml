@@ -12,11 +12,11 @@ build:
     default:
       conda: python
 run:
-  streamz:
+  zstreamz:
     default:
-      conda: streamz
+      conda: zstreamz
     bleeding:
-      pip: 'git+https://github.com/mrocklin/streamz.git#egg=streamz'
+      pip: 'git+https://github.com/xpdAcq/zstreamz.git#egg=zstreamz'
   toolz:
     default:
       conda: toolz

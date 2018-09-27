@@ -13,6 +13,7 @@ from . import core, sources
 from .core import Stream
 
 from collections import Sequence
+from toolz import pluck as _pluck
 
 NULL_COMPUTE = "~~NULL_COMPUTE~~"
 
@@ -142,12 +143,12 @@ class gather(ParallelStream):
     def update(self, x, who=None):
         client = self.default_client()
         result = yield client.gather(x, asynchronous=True)
-        if not (
-            (
+        if (
+            not (
                 isinstance(result, Sequence)
                 and any(r == NULL_COMPUTE for r in result)
             )
-            or result == NULL_COMPUTE
+            and result != NULL_COMPUTE
         ):
             result2 = yield self._emit(result)
             raise gen.Return(result2)
@@ -208,7 +209,7 @@ class accumulate(ParallelStream):
 @ParallelStream.register_api()
 class starmap(ParallelStream):
     def __init__(self, upstream, func, *args, **kwargs):
-        self.func = filter_null_wrapper(func)
+        self.func = func
         stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
         self.args = args
@@ -217,7 +218,13 @@ class starmap(ParallelStream):
 
     def update(self, x: Future, who=None):
         client = self.default_client()
-        result = client.submit(apply, self.func, x, self.args, self.kwargs)
+        result = client.submit(
+            filter_null_wrapper(apply),
+            filter_null_wrapper(self.func),
+            x,
+            self.args,
+            self.kwargs,
+        )
         return self._emit(result)
 
 
@@ -238,6 +245,25 @@ class filter(ParallelStream):
         client = self.default_client()
         result = client.submit(self.predicate, x, *self.args, **self.kwargs)
         return self._emit(result)
+
+
+@args_kwargs
+@ParallelStream.register_api()
+class pluck(ParallelStream):
+    def __init__(self, upstream, pick, **kwargs):
+        self.pick = pick
+        super().__init__(upstream, **kwargs)
+
+    def update(self, x, who=None):
+        client = self.default_client()
+        if isinstance(self.pick, Sequence):
+            return self._emit(
+                client.submit(filter_null_wrapper(_pluck), self.pick, x)
+            )
+        else:
+            return self._emit(
+                client.submit(filter_null_wrapper(getitem), x, self.pick)
+            )
 
 
 @args_kwargs
@@ -315,10 +341,4 @@ class filenames(ParallelStream, sources.filenames):
 @args_kwargs
 @ParallelStream.register_api(staticmethod)
 class from_textfile(ParallelStream, sources.from_textfile):
-    pass
-
-
-@args_kwargs
-@ParallelStream.register_api()
-class pluck(ParallelStream, core.pluck):
     pass

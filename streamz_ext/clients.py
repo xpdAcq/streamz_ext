@@ -9,19 +9,20 @@ from tornado.ioloop import IOLoop
 from .core import identity
 
 
-def result_maybe(future_maybe, top=False):
+def result_maybe(future_maybe):
     try:
         return future_maybe.result()
     except AttributeError:
-        if isinstance(future_maybe, Sequence):
+        if isinstance(future_maybe, Sequence) and not isinstance(
+            future_maybe, str
+        ):
             aa = []
             for a in future_maybe:
-                aa.append(result_maybe(a, top=False))
+                aa.append(result_maybe(a))
             if isinstance(future_maybe, tuple):
                 aa = tuple(aa)
             return aa
         return future_maybe
-
 
 
 def delayed_execution(func):
