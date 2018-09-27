@@ -4,7 +4,6 @@ from functools import wraps
 
 from distributed import default_client as dask_default_client
 from tornado import gen
-from tornado.ioloop import IOLoop
 
 from .core import identity
 
@@ -14,7 +13,7 @@ def result_maybe(future_maybe):
         return future_maybe.result()
     except AttributeError:
         if isinstance(future_maybe, Sequence) and not isinstance(
-            future_maybe, str
+                future_maybe, str
         ):
             aa = []
             for a in future_maybe:
@@ -69,10 +68,19 @@ def executor_to_client(executor):
     return executor
 
 
-ex = executor_to_client(ThreadPoolExecutor())
+thread_ex_list = []
 
 
 def thread_default_client():
+    if thread_ex_list:
+        ex = thread_ex_list[0]
+        if ex._shutdown:
+            thread_ex_list.pop()
+            ex = executor_to_client(ThreadPoolExecutor())
+            thread_ex_list.append(ex)
+    else:
+        ex = executor_to_client(ThreadPoolExecutor())
+        thread_ex_list.append(ex)
     return ex
 
 

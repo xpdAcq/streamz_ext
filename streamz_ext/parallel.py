@@ -121,7 +121,7 @@ class scatter(ParallelStream):
 
 @args_kwargs
 @ParallelStream.register_api()
-class gather(ParallelStream):
+class gather(core.Stream):
     """ Wait on and gather results from ParallelStream to local Stream
 
     This waits on every result in the stream and then gathers that result back
@@ -138,6 +138,29 @@ class gather(ParallelStream):
     buffer
     scatter
     """
+
+    def __init__(self, *args, backend="dask", **kwargs):
+        super().__init__(*args, **kwargs)
+        upstream_backends = set(
+            [getattr(u, "default_client", None) for u in self.upstreams]
+        )
+        if None in upstream_backends:
+            upstream_backends.remove(None)
+        if len(upstream_backends) > 1:
+            raise RuntimeError("Mixing backends is not supported")
+        elif upstream_backends:
+            self.default_client = upstream_backends.pop()
+        else:
+            self.default_client = DEFAULT_BACKENDS.get(backend, backend)
+        if "loop" not in kwargs and getattr(
+            self.default_client(), "loop", None
+        ):
+            loop = self.default_client().loop
+            self._set_loop(loop)
+            if kwargs.get("ensure_io_loop", False) and not self.loop:
+                self._set_asynchronous(False)
+            if self.loop is None and self.asynchronous is not None:
+                self._set_loop(get_io_loop(self.asynchronous))
 
     @gen.coroutine
     def update(self, x, who=None):
