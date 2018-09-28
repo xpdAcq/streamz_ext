@@ -324,17 +324,16 @@ def test_combined_latest(backend):
     def delay(x):
         time.sleep(.5)
         return x
+
     source = Stream(asynchronous=True)
     source2 = Stream(asynchronous=True)
-    futures = source.scatter(backend=backend).map(delay).combine_latest(
-        source2.scatter(backend=backend), emit_on=1)
-    futures_L = futures.sink_to_list()
-    L = (
-        futures
-        .buffer(10)
-        .gather()
-        .sink_to_list()
+    futures = (
+        source.scatter(backend=backend)
+        .map(delay)
+        .combine_latest(source2.scatter(backend=backend), emit_on=1)
     )
+    futures_L = futures.sink_to_list()
+    L = futures.buffer(10).gather().sink_to_list()
 
     for i in range(5):
         yield source.emit(i)

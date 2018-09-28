@@ -265,9 +265,9 @@ def test_double_scatter(c, s, a, b):
     r = sm.buffer(10).gather()
     L = r.sink_to_list()
 
-    print('hi')
+    print("hi")
     for i in range(5):
-        print('hi')
+        print("hi")
         yield source1.emit(i)
         yield source2.emit(i)
 

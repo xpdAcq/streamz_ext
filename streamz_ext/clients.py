@@ -13,7 +13,7 @@ def result_maybe(future_maybe):
         return future_maybe.result()
     except AttributeError:
         if isinstance(future_maybe, Sequence) and not isinstance(
-                future_maybe, str
+            future_maybe, str
         ):
             aa = []
             for a in future_maybe:
