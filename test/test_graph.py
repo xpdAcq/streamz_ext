@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from streamz_ext.graph import *
 
 try:
-    from streamz.tests.test_graph import *
+    from zstreamz.tests.test_graph import *
 except ImportError:
     pass
 

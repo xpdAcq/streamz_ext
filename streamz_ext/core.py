@@ -2,20 +2,34 @@ from collections import Hashable
 from collections.abc import Sequence
 import threading
 
-from streamz.core import *
-from streamz.core import (
+from zstreamz.core import *
+from zstreamz.core import (
     combine_latest as _combine_latest,
     zip as _zip,
     zip_latest as _zip_latest,
 )
-from streamz.core import _global_sinks, _truthy
+from zstreamz.core import _global_sinks, _truthy
+
+
+def apply(func, args, args2=None, kwargs=None):
+    if not isinstance(args, Sequence) or isinstance(args, str):
+        args = (args,)
+    if args2:
+        args = args + args2
+    if kwargs:
+        return func(*args, **kwargs)
+    else:
+        return func(*args)
 
 
 def scatter(self, **kwargs):
     from .parallel import scatter
+
     return scatter(self, **kwargs)
 
+
 Stream.scatter = scatter
+
 
 @Stream.register_api()
 class starsink(Stream):
@@ -147,9 +161,9 @@ def move_to_first(node, f=True):
 
     Parameters
     ----------
-    node : Streamz instance
+    node : zstreamz instance
         Node to be promoted
-    f : bool or Sequence of Streamz
+    f : bool or Sequence of zstreamz
         The upstream node(s) to promote this node for. If True, promote all
         upstream nodes. Defaults to True
 

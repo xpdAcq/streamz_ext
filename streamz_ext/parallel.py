@@ -1,19 +1,19 @@
+from concurrent.futures import Future
 from functools import wraps
 
-from streamz import Stream
-from streamz.core import _truthy
+from streamz_ext import apply
+from zstreamz.core import _truthy, args_kwargs
 from streamz_ext.core import get_io_loop
 from streamz_ext.clients import DEFAULT_BACKENDS
 from operator import getitem
 
 from tornado import gen
 
-from dask.compatibility import apply
-
 from . import core, sources
-from .core import Stream, identity
+from .core import Stream
 
 from collections import Sequence
+from toolz import pluck as _pluck
 
 NULL_COMPUTE = "~~NULL_COMPUTE~~"
 
@@ -46,7 +46,7 @@ def filter_null_wrapper(func):
 class ParallelStream(Stream):
     """ A Parallel stream using multiple backends
 
-    This object is fully compliant with the ``streamz.core.Stream`` object but
+    This object is fully compliant with the ``zstreamz.core.Stream`` object but
     uses a client for execution.  Operations like ``map`` and
     ``accumulate`` submit functions to run on the client instance
     and pass around futures.
@@ -107,6 +107,7 @@ class ParallelStream(Stream):
                 self._set_loop(get_io_loop(self.asynchronous))
 
 
+@args_kwargs
 @core.Stream.register_api()
 @ParallelStream.register_api()
 class scatter(ParallelStream):
@@ -118,8 +119,9 @@ class scatter(ParallelStream):
         raise gen.Return(f)
 
 
+@args_kwargs
 @ParallelStream.register_api()
-class gather(ParallelStream):
+class gather(core.Stream):
     """ Wait on and gather results from ParallelStream to local Stream
 
     This waits on every result in the stream and then gathers that result back
@@ -137,29 +139,54 @@ class gather(ParallelStream):
     scatter
     """
 
+    def __init__(self, *args, backend="dask", **kwargs):
+        super().__init__(*args, **kwargs)
+        upstream_backends = set(
+            [getattr(u, "default_client", None) for u in self.upstreams]
+        )
+        if None in upstream_backends:
+            upstream_backends.remove(None)
+        if len(upstream_backends) > 1:
+            raise RuntimeError("Mixing backends is not supported")
+        elif upstream_backends:
+            self.default_client = upstream_backends.pop()
+        else:
+            self.default_client = DEFAULT_BACKENDS.get(backend, backend)
+        if "loop" not in kwargs and getattr(
+            self.default_client(), "loop", None
+        ):
+            loop = self.default_client().loop
+            self._set_loop(loop)
+            if kwargs.get("ensure_io_loop", False) and not self.loop:
+                self._set_asynchronous(False)
+            if self.loop is None and self.asynchronous is not None:
+                self._set_loop(get_io_loop(self.asynchronous))
+
     @gen.coroutine
     def update(self, x, who=None):
         client = self.default_client()
         result = yield client.gather(x, asynchronous=True)
-        if not (
-            (
+        if (
+            not (
                 isinstance(result, Sequence)
                 and any(r == NULL_COMPUTE for r in result)
             )
-            or result == NULL_COMPUTE
+            and result != NULL_COMPUTE
         ):
             result2 = yield self._emit(result)
             raise gen.Return(result2)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class map(ParallelStream):
     def __init__(self, upstream, func, *args, **kwargs):
         self.func = filter_null_wrapper(func)
+        stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
         self.args = args
 
-        ParallelStream.__init__(self, upstream)
+        ParallelStream.__init__(self, upstream, stream_name=stream_name)
 
     def update(self, x, who=None):
         client = self.default_client()
@@ -167,6 +194,7 @@ class map(ParallelStream):
         return self._emit(result)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class accumulate(ParallelStream):
     def __init__(
@@ -180,8 +208,9 @@ class accumulate(ParallelStream):
         self.func = filter_null_wrapper(func)
         self.state = start
         self.returns_state = returns_state
+        stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
-        ParallelStream.__init__(self, upstream)
+        ParallelStream.__init__(self, upstream, stream_name=stream_name)
 
     def update(self, x, who=None):
         if self.state is core.no_default:
@@ -199,21 +228,30 @@ class accumulate(ParallelStream):
             return self._emit(result)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class starmap(ParallelStream):
-    def __init__(self, upstream, func, **kwargs):
-        self.func = filter_null_wrapper(func)
+    def __init__(self, upstream, func, *args, **kwargs):
+        self.func = func
         stream_name = kwargs.pop("stream_name", None)
         self.kwargs = kwargs
+        self.args = args
 
         ParallelStream.__init__(self, upstream, stream_name=stream_name)
 
-    def update(self, x, who=None):
+    def update(self, x: Future, who=None):
         client = self.default_client()
-        result = client.submit(apply, self.func, x, self.kwargs)
+        result = client.submit(
+            filter_null_wrapper(apply),
+            filter_null_wrapper(self.func),
+            x,
+            self.args,
+            self.kwargs,
+        )
         return self._emit(result)
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class filter(ParallelStream):
     def __init__(self, upstream, predicate, *args, **kwargs):
@@ -232,71 +270,98 @@ class filter(ParallelStream):
         return self._emit(result)
 
 
+@args_kwargs
+@ParallelStream.register_api()
+class pluck(ParallelStream):
+    def __init__(self, upstream, pick, **kwargs):
+        self.pick = pick
+        super().__init__(upstream, **kwargs)
+
+    def update(self, x, who=None):
+        client = self.default_client()
+        if isinstance(self.pick, Sequence):
+            return self._emit(
+                client.submit(filter_null_wrapper(_pluck), self.pick, x)
+            )
+        else:
+            return self._emit(
+                client.submit(filter_null_wrapper(getitem), x, self.pick)
+            )
+
+
+@args_kwargs
 @ParallelStream.register_api()
 class buffer(ParallelStream, core.buffer):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class combine_latest(ParallelStream, core.combine_latest):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class delay(ParallelStream, core.delay):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class latest(ParallelStream, core.latest):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class partition(ParallelStream, core.partition):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class rate_limit(ParallelStream, core.rate_limit):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class sliding_window(ParallelStream, core.sliding_window):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class timed_window(ParallelStream, core.timed_window):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class union(ParallelStream, core.union):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class zip(ParallelStream, core.zip):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api()
 class zip_latest(ParallelStream, core.zip_latest):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api(staticmethod)
 class filenames(ParallelStream, sources.filenames):
     pass
 
 
+@args_kwargs
 @ParallelStream.register_api(staticmethod)
 class from_textfile(ParallelStream, sources.from_textfile):
-    pass
-
-
-@ParallelStream.register_api()
-class pluck(ParallelStream, core.pluck):
     pass

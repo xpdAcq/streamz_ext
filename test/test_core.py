@@ -1,7 +1,7 @@
 import operator as op
 
 try:
-    from streamz.tests.test_core import *
+    from zstreamz.tests.test_core import *
 except ImportError as e:
     pass
 from streamz_ext import Stream, destroy_pipeline

@@ -1,1 +1,1 @@
-from streamz.batch import *
+from zstreamz.batch import *

@@ -2,7 +2,7 @@ from streamz_ext.link import *
 from streamz_ext import Stream
 
 try:
-    from streamz.tests.test_link import *
+    from zstreamz.tests.test_link import *
 except ImportError:
     pass
 
