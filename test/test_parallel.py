@@ -285,7 +285,7 @@ def test_filter_zip(backend):
 @gen_test()
 def test_double_scatter(backend):
     source1 = Stream(asynchronous=True)
-    source2 = Stream()
+    source2 = Stream(asynchronous=True)
     sm = (
         source1.scatter(backend=backend)
         .zip(source2.scatter(backend=backend))

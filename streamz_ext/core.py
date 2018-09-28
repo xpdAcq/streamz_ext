@@ -12,6 +12,8 @@ from zstreamz.core import _global_sinks, _truthy
 
 
 def apply(func, args, args2=None, kwargs=None):
+    if not isinstance(args, Sequence) or isinstance(args, str):
+        args = (args,)
     if args2:
         args = args + args2
     if kwargs:

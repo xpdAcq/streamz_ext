@@ -194,7 +194,7 @@ def test_starmap(c, s, a, b):
 
 
 @gen_cluster(client=True)
-def test_starmap_args():
+def test_starmap_args(c, s, a, b):
     def add(x, y, z=0):
         return x + y + z
 
@@ -257,37 +257,22 @@ def test_filter_zip(c, s, a, b):
 @gen_cluster(client=True)
 def test_double_scatter(c, s, a, b):
     source1 = Stream(asynchronous=True)
-    source2 = Stream()
+    source1.sink(print)
+    source2 = Stream(asynchronous=True)
+    source2.sink(print)
     sm = source1.scatter().zip(source2.scatter()).starmap(add)
     futures_L = sm.sink_to_list()
     r = sm.buffer(10).gather()
     L = r.sink_to_list()
 
+    print('hi')
     for i in range(5):
+        print('hi')
         yield source1.emit(i)
         yield source2.emit(i)
 
     while len(L) < len(futures_L):
-        yield gen.sleep(.01)
-
-    assert L == [i + i for i in range(5)]
-    assert all(isinstance(f, Future) for f in futures_L)
-
-
-@gen_cluster(client=True)
-def test_double_scatter(c, s, a, b):
-    source1 = Stream(asynchronous=True)
-    source2 = Stream()
-    sm = source1.scatter().zip(source2.scatter()).starmap(add)
-    futures_L = sm.sink_to_list()
-    r = sm.buffer(10).gather()
-    L = r.sink_to_list()
-
-    for i in range(5):
-        yield source1.emit(i)
-        yield source2.emit(i)
-
-    while len(L) < len(futures_L):
+        print(len(L), print(len(futures_L)))
         yield gen.sleep(.01)
 
     assert L == [i + i for i in range(5)]
